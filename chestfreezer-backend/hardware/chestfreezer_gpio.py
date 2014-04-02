@@ -9,22 +9,19 @@ import RPi.GPIO as GPIO
 import sys
 import time
 
-print 'hardware code here boy!'
 GPIO.setmode(GPIO.BOARD)
 
 # will set the (boolean) state of the given pin_number # in GPIO.BOARD mode. Throws ValueError.
-def output_pin(pin_number, state):  
-    if not isinstance(pin_number, int):
-        pin_number = int(pin_number)
-    GPIO.setup(pin_number, GPIO.OUT)    
-    GPIO.output(pin_number, state)     
+def output_pin(pin_number, state):
+    GPIO.setup(int(pin_number), GPIO.OUT)    
+    GPIO.output(int(pin_number), state)     
     
 # will set the (boolean) state of the given pin_number # in GPIO.BOARD mode. After given seconds have passed, will flip the state around.
 # Throws ValueError.
 def output_pin_for_time(pin_number, state, seconds):
     output_pin(pin_number, state)
     time.sleep(seconds)
-    GPIO.output(pin_number, not state)   
+    GPIO.output(int(pin_number), not state)   
 
 # will call the RPi.GPIO library to cleanup all the hardware pin_number states
 def cleanup():
