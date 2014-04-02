@@ -25,8 +25,8 @@ def checkHardware():
     # first the GPIO pins
     import hardware.chestfreezer_gpio as gpio
     print 'Checking plug control - you should hear four distinct clicking noises...'  
-    gpio.output_pin_for_time(configuration.device1_pin, False, 3)
-    gpio.output_pin_for_time(configuration.device2_pin, False, 3)
+    gpio.output_pin_for_time(configuration.device1_pin(), False, 3)
+    gpio.output_pin_for_time(configuration.device2_pin(), False, 3)
     print 'Pins #' + configuration.device1_pin + ' and #' + configuration.device2_pin + '  are reachable.'
     
     # then the temperature sensor(s)
