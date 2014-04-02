@@ -37,14 +37,14 @@ else:
 # returns the GPIO pin # that controls the 1st plug in the relay
 def device1_pin():
     if does_config_file_exist():
-        return Config.getoption('device1_pin')
+        return int(Config.getoption('device1_pin'))
     else:
         return DEFAULT_DEVICE1_PIN
 
 # returns the GPIO pin # that controls the 2nd plug in the relay
 def device2_pin():
     if does_config_file_exist():
-        return Config.getoption('device2_pin')
+        return int(Config.getoption('device2_pin'))
     else:
         return DEFAULT_DEVICE2_PIN
 
