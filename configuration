@@ -1,0 +1,5 @@
+device1_pin = 3
+device2_pin = 5
+
+emails_to_notify = thechristoulou@gmail.com, the.socrates@gmail.com
+administrator_email = thechristoulou@gmail.com

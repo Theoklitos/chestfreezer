@@ -1,9 +1,6 @@
 # Eclipse stuff
 *.classpath
 *.metadata
-*.project
-*.pydevproject
-*~
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
