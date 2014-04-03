@@ -57,7 +57,7 @@ def checkHardware():
     if number_of_readings == 0:
         sys.exit('No temperature probes were detected, check your wiring. Terminating.')
     else:
-        print 'Found ' + number_of_readings + ' functional temperature sensors.'
+        print 'Found ' + str(number_of_readings) + ' functional temperature sensors.'
     print temperature.getTemperatureReadings()
         
 def checkInternetConnectivity():    
