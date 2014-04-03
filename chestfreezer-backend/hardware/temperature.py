@@ -37,7 +37,8 @@ def read_temp_raw(device_file):
 def getTemperatureReadings():
     """ reads (immediately) the temperature readings from the probes returns a list with any temperature read """
     readings = []    
-    for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):            
+    for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):
+        print '\nDEVICE FOLDER!: ' + device_folder + '\n'            
         device_file = device_folder + '/w1_slave'
         probe_id = device_folder.split('28-',1)[1]        
         lines = read_temp_raw(device_file)

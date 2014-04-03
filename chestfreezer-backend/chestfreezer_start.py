@@ -10,6 +10,7 @@ import urllib2
 from util import configuration, misc_utils
 from hardware import temperature
 from database import mysql_adapter
+import time
 
 def checkImports():
     try:
@@ -28,7 +29,7 @@ def do_sound_check():
     response = misc_utils.get_single_char().lower()
     if response == 'y':
         return True
-    elif response == 'n':
+    elif response == 'n':        
         sys.exit('There seems to be a pin connectivity problem, check your wiring. Terminating.')
     else:
         return False    
@@ -36,17 +37,18 @@ def do_sound_check():
 def checkHardware():
     # first the GPIO pins
     import hardware.chestfreezer_gpio as gpio
+    gpio.cleanup()
     sound_check_passed = False;
     while not sound_check_passed:
-        print 'Checking plug control - you should hear four distinct clicking noises...'
+        print 'Checking device control - you should hear four distinct clicking noises...'
+        time.sleep(1)
         try:  
-            gpio.output_pin_for_time(configuration.device1_pin(), False, 1)
-            gpio.output_pin_for_time(configuration.device2_pin(), False, 1)
-        except ValueError as e:
-            gpio.cleanup()
+            gpio.output_pin_for_time(configuration.device1_pin(), False, 2)
+            gpio.output_pin_for_time(configuration.device2_pin(), False, 2)
+        except ValueError as e:            
             sys.exit('Pins could not be activated, reason:\n' + str(e) + '\nTerminating.')
         sound_check_passed = do_sound_check()            
-    print 'Pins #' + configuration.device1_pin() + ' and #' + configuration.device2_pin() + '  are connected correctly.'            
+    print 'Pins #' + configuration.device1_pin() + ' and #' + configuration.device2_pin() + ' mdsadare connected correctly.'            
     
     # then the temperature sensor(s)
     print temperature.getTemperatureReadings()
@@ -68,7 +70,7 @@ def checkInternetConnectivity():
 def checkDatabase():
     try:
         mysql_adapter.connect()        
-        print 'Successfully connected to database.'
+        print 'Successfully connected to the database.'
     except Exception as e:
         sys.exit('Could not connect to database. Error:\n' + str(e) + '\nTerminating.')
             
