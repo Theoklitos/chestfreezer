@@ -11,6 +11,8 @@ import termios
 import fcntl
 
 def get_single_char():
+    """ waits for user input and immediately reads the first char without waiting for a newline. 
+    Found at: http://love-python.blogspot.de/2010/03/getch-in-python-get-single-character.html"""      
     fd = sys.stdin.fileno()   
     oldterm = termios.tcgetattr(fd)
     newattr = termios.tcgetattr(fd)
