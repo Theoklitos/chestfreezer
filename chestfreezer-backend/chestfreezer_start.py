@@ -24,7 +24,7 @@ def checkImports():
 
 def do_sound_check():
     """ asks the user if he heard 4 clicks, returns the boolean result"""
-    print 'Did you hear the four distinct clicking noises (\'y\',\'n\' or any other key to repeat]?'
+    print 'Did you hear the four distinct clicking noises (enter \'y\' or \'n\' or any other key to repeat)?'
     response = misc_utils.get_single_char().lower()
     if response == 'y':
         return True
@@ -40,15 +40,16 @@ def checkHardware():
     while not sound_check_passed:
         print 'Checking plug control - you should hear four distinct clicking noises...'
         try:  
-            gpio.output_pin_for_time(configuration.device1_pin(), False, 3)
-            gpio.output_pin_for_time(configuration.device2_pin(), False, 3)
+            gpio.output_pin_for_time(configuration.device1_pin(), False, 1)
+            gpio.output_pin_for_time(configuration.device2_pin(), False, 1)
         except ValueError as e:
+            gpio.cleanup()
             sys.exit('Pins could not be activated, reason:\n' + str(e) + '\nTerminating.')
         sound_check_passed = do_sound_check()            
-    print 'Pins #' + configuration.device1_pin + ' and #' + configuration.device2_pin + '  are connected correctly.'            
+    print 'Pins #' + configuration.device1_pin() + ' and #' + configuration.device2_pin() + '  are connected correctly.'            
     
     # then the temperature sensor(s)
-    temperature.getTemperatureReadings()
+    print temperature.getTemperatureReadings()
         
 def checkInternetConnectivity():    
     try:
@@ -66,8 +67,7 @@ def checkInternetConnectivity():
 
 def checkDatabase():
     try:
-        mysql_adapter.connect()
-        
+        mysql_adapter.connect()        
         print 'Successfully connected to database.'
     except Exception as e:
         sys.exit('Could not connect to database. Error:\n' + str(e) + '\nTerminating.')
