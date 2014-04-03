@@ -11,6 +11,8 @@ from util import configuration, misc_utils
 from hardware import temperature
 from database import mysql_adapter
 import time
+from hardware.temperature import TemperatureReading
+import datetime
 
 def checkImports():
     try:
@@ -25,7 +27,7 @@ def checkImports():
 
 def do_sound_check(gpio):
     """ asks the user if he heard 4 clicks, returns the boolean result"""
-    print 'Did you hear the four distinct clicking noises (enter \'y\' or \'n\' or any other key to repeat)?'
+    print 'Did you hear the four distinct noises (enter \'y\' or \'n\' or any other key to repeat)?'
     response = misc_utils.get_single_char().lower()
     if response == 'y':
         return True
@@ -40,7 +42,7 @@ def checkHardware():
     import hardware.chestfreezer_gpio as gpio    
     sound_check_passed = False;
     while not sound_check_passed:
-        print 'Checking device control - you should hear four distinct clicking noises...'
+        print 'Checking device control - you should hear four clicking noises...'
         time.sleep(1)
         try:  
             gpio.output_pin_for_time(configuration.device1_pin(), False, 1)
@@ -48,7 +50,7 @@ def checkHardware():
         except ValueError as e:            
             sys.exit('Pins could not be activated, reason:\n' + str(e) + '\nTerminating.')
         sound_check_passed = do_sound_check(gpio)            
-    print 'Pins #' + configuration.device1_pin() + ' and #' + configuration.device2_pin() + ' mdsadare connected correctly.'            
+    print 'Pins #' + configuration.device1_pin() + ' and #' + configuration.device2_pin() + ' connected correctly.'            
     
     # then the temperature sensor(s)
     number_of_readings = len(temperature.getTemperatureReadings());
@@ -56,6 +58,7 @@ def checkHardware():
         sys.exit('No temperature probes were detected, check your wiring. Terminating.')
     else:
         print 'Found ' + number_of_readings + ' functional temperature sensors.'
+    print temperature.getTemperatureReadings()
         
 def checkInternetConnectivity():    
     print 'Checking internet connectivity...',
@@ -89,7 +92,7 @@ def startWebInterface():
     pass
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     # check if everything is in place
     checkImports()
     checkHardware()
