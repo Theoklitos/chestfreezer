@@ -84,9 +84,9 @@ def startWebInterface():
 
 if __name__ == "__main__":    
     # check if everything is in place
-    # checkImports()
-    # checkHardware()
-    # checkInternetConnectivity()
+    checkImports()
+    checkHardware()
+    checkInternetConnectivity()
     checkDatabase()
     
     # start threads that do all the work
