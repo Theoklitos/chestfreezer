@@ -9,6 +9,7 @@ import RPi.GPIO as GPIO
 import sys
 import time
 
+GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BOARD)
 
 def output_pin(pin_number, state):

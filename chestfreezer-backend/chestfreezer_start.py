@@ -23,46 +23,51 @@ def checkImports():
         sys.exit('Either you are not using a raspberry pi or you don\'t have RPi installed.\nTry visiting https://pypi.python.org/pypi/RPi.GPIO')
     print 'Installed libraries and modules are all place.'        
 
-def do_sound_check():
+def do_sound_check(gpio):
     """ asks the user if he heard 4 clicks, returns the boolean result"""
     print 'Did you hear the four distinct clicking noises (enter \'y\' or \'n\' or any other key to repeat)?'
     response = misc_utils.get_single_char().lower()
     if response == 'y':
         return True
-    elif response == 'n':        
+    elif response == 'n':
+        gpio.cleanup()        
         sys.exit('There seems to be a pin connectivity problem, check your wiring. Terminating.')
     else:
         return False    
 
 def checkHardware():
     # first the GPIO pins
-    import hardware.chestfreezer_gpio as gpio
-    gpio.cleanup()
+    import hardware.chestfreezer_gpio as gpio    
     sound_check_passed = False;
     while not sound_check_passed:
         print 'Checking device control - you should hear four distinct clicking noises...'
         time.sleep(1)
         try:  
-            gpio.output_pin_for_time(configuration.device1_pin(), False, 2)
-            gpio.output_pin_for_time(configuration.device2_pin(), False, 2)
+            gpio.output_pin_for_time(configuration.device1_pin(), False, 1)
+            gpio.output_pin_for_time(configuration.device2_pin(), False, 1)
         except ValueError as e:            
             sys.exit('Pins could not be activated, reason:\n' + str(e) + '\nTerminating.')
-        sound_check_passed = do_sound_check()            
+        sound_check_passed = do_sound_check(gpio)            
     print 'Pins #' + configuration.device1_pin() + ' and #' + configuration.device2_pin() + ' mdsadare connected correctly.'            
     
     # then the temperature sensor(s)
-    print temperature.getTemperatureReadings()
+    number_of_readings = len(temperature.getTemperatureReadings());
+    if number_of_readings == 0:
+        sys.exit('No temperature probes were detected, check your wiring. Terminating.')
+    else:
+        print 'Found ' + number_of_readings + ' functional temperature sensors.'
         
 def checkInternetConnectivity():    
+    print 'Checking internet connectivity...',
     try:
         urllib2.urlopen('http://74.125.228.100', timeout=1)
         do_we_have_internet = True
     except urllib2.URLError:
         do_we_have_internet = False        
     if do_we_have_internet:
-        print 'Internet connection is working fine.'
+        print ' connection is good.'
     else:
-        print 'Could not reach the internet. If you want to proceed regardless then press \'y\', otherwise press any other key to exit.'
+        print '\nCould not reach the internet. If you want to proceed regardless then press \'y\', otherwise press any other key to exit.'
         response = misc_utils.get_single_char().lower()
         if response != 'y':
             sys.exit('Terminating.')        

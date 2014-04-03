@@ -11,7 +11,7 @@ import subprocess
 import time
 import datetime
 
-TEMPERATURE_PROBE_PATH = '/sys/bus/w1/devices' 
+TEMPERATURE_PROBE_PATH = '/sys/bus/w1/devices/' 
 
 class TempReading():
     """ represents a single temp probe reading from a moment in time """            
