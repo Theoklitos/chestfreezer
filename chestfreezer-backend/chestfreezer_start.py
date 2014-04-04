@@ -82,7 +82,7 @@ def checkInternetConnectivity():
         if response != 'y':
             sys.exit('Terminating.')        
 
-def checkDatabase():
+def checkAndInitDatabase():
     try:
         mysql_adapter.connect()
         print 'Successfully connected to the database.'
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     checkImports()
     checkHardware()
     checkInternetConnectivity()
-    checkDatabase()
+    checkAndInitDatabase()
     
     # start threads that do all the work
     startTemperatureRecordingThread()

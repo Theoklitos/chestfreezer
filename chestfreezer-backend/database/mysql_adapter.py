@@ -18,11 +18,9 @@ PROBES_TABLE_NAME = 'probes'
 INSTRUCTIONS_TABLE_NAME = 'instructions'
 
 def connect():
-    global db    
-    db = MySQLdb.connect(host=configuration.get_db_host(), user=configuration.get_db_user(), passwd=configuration.get_db_pwd(), db=configuration.get_db_name())                
-    global cursor
+    db = MySQLdb.connect(host=configuration.get_db_host(), user=configuration.get_db_user(), passwd=configuration.get_db_pwd(), db=configuration.get_db_name())
     cursor = db.cursor()
-        
+
     # check if tables exist, init the database
     probe_tables = cursor.execute("SHOW TABLES LIKE '" + PROBES_TABLE_NAME + "'");
     if probe_tables == 0:
@@ -36,8 +34,7 @@ def connect():
     instruction_tables = cursor.execute("SHOW TABLES LIKE '" + INSTRUCTIONS_TABLE_NAME + "'");
     if instruction_tables == 0:
         # create temperature readings
-        sql_statement = "CREATE TABLE " + INSTRUCTIONS_TABLE_NAME + " ( temperature_C FLOAT(6,3), start DATETIME, end DATETIME, description TEXT )"
-        print sql_statement
+        sql_statement = "CREATE TABLE " + INSTRUCTIONS_TABLE_NAME + " ( temperature_C FLOAT(6,3), start DATETIME, end DATETIME, description TEXT )"        
         cursor.execute(sql_statement);
         
 def store_probe(probe, should_overwrite=True):
