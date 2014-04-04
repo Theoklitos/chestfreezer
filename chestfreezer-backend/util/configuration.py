@@ -18,6 +18,8 @@ DEFAULT_DB_HOST = 'localhost'
 DEFAULT_DB_USER = 'brewmaster'
 DEFAULT_DB_PASSWORD = 'h3f3w3iz3n'
 DEFAULT_DB_NAME = 'chestfreezer'
+DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS = 5
+store_interval_overwrite = None
 
 def does_config_file_exist():
     return config_file is not None
@@ -50,6 +52,18 @@ def get_option_with_default(option_name, default_value):
     except NoOptionError:
         return default_value
 
+def set_store_temperature_interval_seconds(seconds):
+    """ sets every how many seconds should the app store temperature readings in the BD """
+    global store_interval_overwrite
+    store_interval_overwrite = seconds
+
+def store_temperature_interval_seconds():
+    """ returns every how many seconds should the app store temperature readings in the BD """
+    if store_interval_overwrite is None:
+        return get_option_with_default('temperature_store_interval_time', DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS)
+    else:
+        return store_interval_overwrite
+
 def device1_pin():
     """ returns the GPIO pin # that controls the 1st plug in the relay """
     return get_option_with_default('device1_pin', DEFAULT_DEVICE1_PIN)    
@@ -73,3 +87,5 @@ def get_db_pwd():
 def get_db_name():
     """ which database should our app use? """
     return get_option_with_default('db_name', DEFAULT_DB_NAME)
+
+

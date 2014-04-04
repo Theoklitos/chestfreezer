@@ -5,14 +5,14 @@ Top level module that is responsible for initializing everything
 
 @author: theoklitos
 '''
+
 import sys
 import urllib2
 from util import configuration, misc_utils
 from hardware import temperature
 from database import mysql_adapter
 import time
-from hardware.temperature import TemperatureReading
-import datetime
+from threading import Thread
 
 def checkImports():
     try:
@@ -23,6 +23,10 @@ def checkImports():
             raise ImportError()
     except ImportError:
         sys.exit('Either you are not using a raspberry pi or you don\'t have RPi installed.\nTry visiting https://pypi.python.org/pypi/RPi.GPIO')
+    try:
+        __import__('api')
+    except ImportError:
+        sys.exit('You need to install api.py. Try visiting http://webpy.org/install')
     print 'Installed libraries and modules are all place.'        
 
 def do_sound_check(gpio):
@@ -53,17 +57,17 @@ def checkHardware():
     print 'Pins #' + configuration.device1_pin() + ' and #' + configuration.device2_pin() + ' connected correctly.'            
     
     # then the temperature sensor(s)
-    number_of_readings = len(temperature.getTemperatureReadings());
+    number_of_readings = len(temperature.get_temperature_readings());
     if number_of_readings == 0:
         sys.exit('No temperature probes were detected, check your wiring. Terminating.')
     else:
-        print 'Found ' + str(number_of_readings) + ' functional temperature sensors.'
-    print temperature.getTemperatureReadings()
-        
+        print 'Found ' + str(number_of_readings) + ' functional temperature sensor(s).'
+        temperature.initialize_probes()    
+
 def checkInternetConnectivity():    
     print 'Checking internet connectivity...',
     try:
-        urllib2.urlopen('http://74.125.228.100', timeout=1)
+        urllib2.urlopen('http://74.125.228.100', timeout=5)  # ping google
         do_we_have_internet = True
     except urllib2.URLError:
         do_we_have_internet = False        
@@ -77,20 +81,26 @@ def checkInternetConnectivity():
 
 def checkDatabase():
     try:
-        mysql_adapter.connect()        
+        mysql_adapter.connect()
         print 'Successfully connected to the database.'
     except Exception as e:
         sys.exit('Could not connect to database. Error:\n' + str(e) + '\nTerminating.')
             
 def startTemperatureRecordingThread():
-    pass
+    """ starts a thread  that stored the temperature readings every second """
+    def record_temperatures():                
+        mysql_adapter.store_temperatures(temperature.get_temperature_readings())
+        print 'Took temperature reading...'
+        time.sleep(configuration.store_temperature_interval_seconds())
+    temperature_recording_thread = Thread(target=record_temperatures, args=())
+    temperature_recording_thread.start()
 
 def startControllerThread():
     pass
 
-def startWebInterface():
-    pass
-
+def startWebInterface():    
+    import api.chestfreezer_api as api
+    api.run()
 
 if __name__ == "__main__":
     # check if everything is in place
@@ -103,7 +113,7 @@ if __name__ == "__main__":
     startTemperatureRecordingThread()
     startControllerThread()
     
-    # finally, the web interface
+    # finally, the api interface
     startWebInterface()
 
     
