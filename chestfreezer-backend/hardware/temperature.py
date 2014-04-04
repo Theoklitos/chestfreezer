@@ -43,7 +43,7 @@ def read_temp_raw(device_file):
     return lines
 
 def initialize_probes():
-    """ looks for existing probes in the /sys folder and writes their ids to the database """
+    """ looks for existing probes in the /sys folder and writes their ids to the database """        
     for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):
         probe_id = device_folder.split('28-',1)[1]
         probe_ids.append(probe_id)
