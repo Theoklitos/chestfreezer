@@ -9,6 +9,11 @@ import web
 import time
 from database import mysql_adapter
 
+class session:
+    """ security controller """
+    def POST(self):
+        pass
+    
 class temperatures:
     """ temperature controller """
     def GET(self):        
@@ -34,6 +39,7 @@ class instructions:
         pass
 
 urls = (
+        '/chestfreezer_api/session', 'session',
         '/chestfreezer_api/temperatures', 'temperatures',
         '/chestfreezer_api/probes', 'probes',
         '/chestfreezer_api/instructions', 'instructions'                

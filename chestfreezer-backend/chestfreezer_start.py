@@ -50,6 +50,7 @@ def checkHardware():
         time.sleep(1)
         try:  
             gpio.output_pin_for_time(configuration.device1_pin(), False, 1)
+            time.sleep(1)
             gpio.output_pin_for_time(configuration.device2_pin(), False, 1)
         except ValueError as e:            
             sys.exit('Pins could not be activated, reason:\n' + str(e) + '\nTerminating.')
@@ -57,11 +58,11 @@ def checkHardware():
     print 'Pins #' + configuration.device1_pin() + ' and #' + configuration.device2_pin() + ' connected correctly.'            
     
     # then the temperature sensor(s)
-    number_of_readings = len(temperature.get_temperature_readings());
-    if number_of_readings == 0:
+    probe_readings = temperature.get_temperature_readings()    
+    if (probe_readings is None) | (len(probe_readings) == 0):    
         sys.exit('No temperature probes were detected, check your wiring. Terminating.')
     else:
-        print 'Found ' + str(number_of_readings) + ' functional temperature sensor(s).'
+        print 'Found ' + str(len(probe_readings)) + ' functional temperature sensor(s).'
         temperature.initialize_probes()    
 
 def checkInternetConnectivity():    
