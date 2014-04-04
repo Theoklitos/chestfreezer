@@ -60,7 +60,7 @@ def set_main_probe(probe_id):
 
 def get_temperature_readings():
     """ reads (immediately) the temperature readings from the probes returns a list with any temperature read """
-    readings = []    
+    readings = []        
     for probe_id in probe_ids:
         device_file = '28-' + probe_id + '/w1_slave'    
         lines = read_temp_raw(device_file)

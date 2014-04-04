@@ -59,7 +59,7 @@ def checkHardware():
     
     # then the temperature sensor(s)
     probe_readings = temperature.get_temperature_readings()    
-    if (probe_readings is None) | (len(probe_readings) == 0):    
+    if probe_readings is None:    
         sys.exit('No temperature probes were detected, check your wiring. Terminating.')
     else:
         print 'Found ' + str(len(probe_readings)) + ' functional temperature sensor(s).'
