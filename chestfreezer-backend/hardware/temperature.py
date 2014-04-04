@@ -17,9 +17,19 @@ probe_ids = []
 
 class Probe():
     """ represents a temperature probe """
-    def __init__(self, probe_id, name="Nameless"):
+    def __init__(self, probe_id, name=None, master=False):
         self.probe_id = probe_id
-        self.name = name
+        if name is None:
+            self.name = str(probe_id)
+        else:
+            self.name = name
+        self.master = master
+    
+    def __str__(self):
+        prefix = ', secondary probe'        
+        if self.master is True:
+            prefix = ', master probe'
+        return 'Probe #' + self.probe_id + ', name: ' + self.name + prefix 
 
 class TemperatureReading():
     """ represents a single temperature probe reading from a moment in time """            
@@ -50,7 +60,7 @@ def initialize_probes():
             
     for probe_id in probe_ids:
         probe = Probe(probe_id)
-        mysql_adapter.store_probe(probe)
+        mysql_adapter.store_probe(probe, False)
 
 def set_probe_name(probe_id, probe_name):
     pass

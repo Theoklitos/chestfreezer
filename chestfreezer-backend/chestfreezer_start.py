@@ -65,7 +65,8 @@ def checkHardware():
     if probes is None:    
         sys.exit('No temperature probes were detected, check your wiring. Terminating.')
     else:
-        print 'Found ' + str(len(probes)) + ' functional temperature sensor(s).'            
+        print 'Found ' + str(len(probes)) + ' functional temperature sensor(s).'
+        mysql_adapter.determine_master_probe()            
 
 def checkInternetConnectivity():    
     print 'Checking internet connectivity...',

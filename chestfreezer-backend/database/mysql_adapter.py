@@ -43,12 +43,13 @@ def store_probe(probe, should_overwrite=True):
     """ stores (with the option to overwrite) a new probe """    
     cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + probe.probe_id + "'")
     results = cursor.fetchall()
+    sql_statement = "INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + probe.probe_id + "','" + probe.name + "', FALSE)"
     if len(results) == 0:
-        cursor.execute("INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + probe.probe_id + "','" + probe.name + "')")
+        cursor.execute(sql_statement)
         print 'Registered new probe #' + probe.probe_id
     elif len(results) == 1:
         if should_overwrite:
-            cursor.execute("INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + probe.probe_id + "','" + probe.name + "')")
+            cursor.execute(sql_statement)
             print 'Updated probe #' + probe.probe_id
         else:
             print 'Probe #' + probe.probe_id + ' is already registered.'
@@ -94,5 +95,10 @@ def get_instructions_for_time(timestamp):
     for result in all_results:
         print result        
     return found_instructions
+
+
+def determine_master_probe():
+    """ if there is no temperature probe set as the MASTER one, will set the first one """
+    
 
 
