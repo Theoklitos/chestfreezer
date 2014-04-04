@@ -13,7 +13,6 @@ from hardware import temperature
 from database import mysql_adapter
 import time
 from threading import Thread
-from hardware.temperature import Probe
 
 def checkImports():
     try:
@@ -60,8 +59,7 @@ def checkHardware():
     
     # then the temperature sensor(s)
     temperature.initialize_probes()
-    probes = temperature.probe_ids
-    print probes    
+    probes = temperature.probe_ids        
     if probes is None:    
         sys.exit('No temperature probes were detected, check your wiring. Terminating.')
     else:
@@ -104,14 +102,8 @@ def startControllerThread():
 
 def startWebInterface():    
     import api.chestfreezer_api as api
-    try:
-        api.run()
-    except KeyboardInterrupt:
-        print 'Interrupted, shutting down...'
-        # stop threads, etc?
-        import hardware.chestfreezer_gpio as gpio
-        gpio.cleanup()
-        sys.exit("Goodbye!")
+    print 'Starting web interface...'
+    api.run()    
 
 if __name__ == "__main__":
     # check if everything is in place    

@@ -8,6 +8,7 @@ A simple rest(?) api to be used to access the functionality
 import web
 import time
 from database import mysql_adapter
+import sys
 
 class session:
     """ security controller """
@@ -48,7 +49,14 @@ urls = (
 def run():
     """ call to web.py run(), starts the web stuff """
     app = web.application(urls, globals())
-    app.run()
+    try:
+        app.run()
+    except KeyboardInterrupt:
+        print 'Interrupted, shutting down...'
+        # stop threads, etc?
+        import hardware.chestfreezer_gpio as gpio
+        gpio.cleanup()
+        sys.exit("Goodbye!")
     
     
     
