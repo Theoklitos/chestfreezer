@@ -18,7 +18,9 @@ PROBES_TABLE_NAME = 'probes'
 INSTRUCTIONS_TABLE_NAME = 'instructions'
 
 def connect():
+    global db
     db = MySQLdb.connect(host=configuration.get_db_host(), user=configuration.get_db_user(), passwd=configuration.get_db_pwd(), db=configuration.get_db_name())
+    global cursor
     cursor = db.cursor()
 
     # check if tables exist, init the database
@@ -39,6 +41,8 @@ def connect():
         
 def store_probe(probe, should_overwrite=True):
     """ stores (with the option to overwrite) a new probe """
+    global cursor
+    global db
     cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + probe.probe_id + "'")
     results = cursor.fetchall()
     if len(results) == 0:
@@ -55,6 +59,8 @@ def store_probe(probe, should_overwrite=True):
 
 def store_temperatures(temperature_readings):
     """ stores the given list of temperature readings """
+    global cursor
+    global db
     if cursor is not None and db is not None:
         for temperature_reading in temperature_readings:
             probe_id = temperature_reading.probe_id
@@ -67,6 +73,8 @@ def store_temperatures(temperature_readings):
 
 def get_readings(from_timestamp, to_timestamp):
     """ returns all the temperature readings from/upto the given timestamps """
+    global cursor
+    global db
     found_temperature_readings = []
     if cursor is not None and db is not None:    
         sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME + " WHERE timestamp BETWEEN from_unixtime(" + str(from_timestamp) 
@@ -85,6 +93,8 @@ def get_readings(from_timestamp, to_timestamp):
 
 def get_instructions_for_time(timestamp):
     """ reads the instructions table and returns all the instructions that would be valid for the given time """
+    global cursor
+    global db
     found_instructions = []
     sql_statement = "SELECT * FROM " + INSTRUCTIONS_TABLE_NAME + " WHERE from_unixtime(" + timestamp +") BETWEEN from and until"
     cursor.execute(sql_statement);
