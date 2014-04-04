@@ -13,7 +13,7 @@ from hardware import temperature
 from database import mysql_adapter
 import time
 from threading import Thread
-from RPi.GPIO import gpio_function
+from hardware.temperature import Probe
 
 def checkImports():
     try:
@@ -91,10 +91,10 @@ def checkAndInitDatabase():
             
 def startTemperatureRecordingThread():
     """ starts a thread  that stored the temperature readings every second """
-    def record_temperatures():                
-        mysql_adapter.store_temperatures(temperature.get_temperature_readings())
-        print 'Took temperature reading...'
-        time.sleep(configuration.store_temperature_interval_seconds())
+    def record_temperatures():        
+        while True:        
+            mysql_adapter.store_temperatures(temperature.get_temperature_readings())            
+            time.sleep(configuration.store_temperature_interval_seconds())
     temperature_recording_thread = Thread(target=record_temperatures, args=())
     temperature_recording_thread.start()
 
@@ -113,11 +113,11 @@ def startWebInterface():
         sys.exit("Goodbye!")
 
 if __name__ == "__main__":
-    # check if everything is in place
+    # check if everything is in place    
     checkImports()
-    checkHardware()
-    checkInternetConnectivity()
     checkAndInitDatabase()
+    checkHardware()
+    checkInternetConnectivity()    
     
     # start threads that do all the work
     startTemperatureRecordingThread()
