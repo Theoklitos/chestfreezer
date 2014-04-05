@@ -91,7 +91,7 @@ class device:
     def POST(self, name):
         _auth_check()
         variables = web.input()
-        print str(len(variables)) + ':' + variables
+        print str(len(variables)) + ':' + str(variables)
         if len(variables) != 1:
             try:
                 if name is None:
