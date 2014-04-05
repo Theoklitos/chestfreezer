@@ -83,6 +83,7 @@ def store_probe(probe, should_overwrite=True):
 
 def store_temperatures(temperature_readings):
     """ stores the given list of temperature readings """    
+    print 
     for temperature_reading in temperature_readings:
         probe_id = temperature_reading.probe_id
         temperature_C = temperature_reading.temperature_C
@@ -90,7 +91,8 @@ def store_temperatures(temperature_readings):
         print 'Storing temperature reading: ' + str(temperature_reading)
         sql_statement = "INSERT INTO " + TEMPERATURE_READINGS_TABLE_NAME + " VALUES ('" + probe_id + "','" + str(temperature_C) + "','" + timestamp + "')"            
         cursor.execute(sql_statement)
-    db.commit()        
+    db.commit()
+    print         
 
 def get_readings(from_timestamp, to_timestamp):
     """ returns all the temperature readings from/upto the given timestamps """
@@ -133,22 +135,12 @@ def set_probe_name(probe_id, new_name):
             store_probe(probe)
             return
     raise Exception('Could not find probe #' + probe_id + ', no update done.')    
-    
 
-def set_main_probe(probe_id):
-    """ sets the given probe to Master, and all the other ones to not-master """
-    found = False
+def get_probe_by_id(probe_id):
+    """ returns the given Probe instance for the id, if any """
     for probe in get_all_probes():
         if probe.probe_id == probe_id:
-            probe.master = True
-            store_probe(probe)
-            found = True
-        else:
-            probe.master = False
-            store_probe(probe)            
-    if not found:
-        hardware.temperature.determine_master_probe()                
-        raise Exception('Could not find probe #' + probe_id + ', no update done.')
+            return probe
 
 def get_all_probes():
     """ returns all the probes """

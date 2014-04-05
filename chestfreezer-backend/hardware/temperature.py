@@ -41,7 +41,7 @@ def _get_new_timestamp():
 class TemperatureReading():
     """ represents a single temperature probe reading from a moment in time """            
     def __init__(self, probe_id, temperature_C, timestamp=None):
-        self.probe_id = str(probe_id)
+        self.probe_id = str(int(probe_id))
         self.temperature_C = temperature_C
         self.temperature_F = temperature_C * 9.0 / 5.0 + 32.0
         if timestamp is None:
@@ -106,3 +106,26 @@ def determine_master_probe():
         master_probe_id = first_result.probe_id
         print 'Auto-determined probe #' + str(first_result.probe_id) + ' to be the master one.' 
 
+
+def set_probe_as_not_master(probe_id):
+    """ removes the master status from the given probe, if any """
+    probe = mysql_adapter.get_probe_by_id(probe_id)
+    if probe.master:        
+        probe.master = False
+        master_probe_id = None
+        mysql_adapter.store_probe(probe)    
+    
+def set_probe_as_master(probe_id):
+    """ sets the given probe to Master, and all the other ones to not-master """
+    found = False
+    for probe in mysql_adapter.get_all_probes():
+        if probe.probe_id == probe_id:
+            probe.master = True
+            mysql_adapter.store_probe(probe)
+            found = True
+        else:
+            probe.master = False
+            mysql_adapter.store_probe(probe)            
+    if not found:
+        determine_master_probe()                
+        raise Exception('Could not find probe #' + probe_id + ', no update done.')

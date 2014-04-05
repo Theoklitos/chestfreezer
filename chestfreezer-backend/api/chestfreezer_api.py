@@ -138,7 +138,20 @@ class probes:
         if probe_id is None:
             raise web.badrequest()
         else:
-            pass
+            try:
+                variables = web.input()
+                if 'name' in variables:                    
+                    pass
+                elif 'master' in variables:
+                    if variables.get('master') in ['True', 'true', 'TRUE']:                        
+                        temperature.set_probe_as_master(probe_id)
+                    elif variables.get('master') in ['False', 'false', 'FALSE']:
+                        temperature.set_probe_as_not_master(probe_id)
+                    else:
+                        raise web.badrequest()
+            except Exception as e:
+                print 'Could not rename probe:\n' + str(e)
+                raise web.badrequest()
 
 class instructions:
     """ temperature instructions controller """
