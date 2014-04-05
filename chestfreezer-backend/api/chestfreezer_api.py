@@ -90,7 +90,8 @@ class device:
             raise web.badrequest()
     def POST(self, name):
         _auth_check()
-        variables = web.input()        
+        variables = web.input()
+        print len(variables) + ',' + variables
         if len(variables) != 1:
             try:
                 if name is None:
