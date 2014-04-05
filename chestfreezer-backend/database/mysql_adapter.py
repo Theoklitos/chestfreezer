@@ -42,7 +42,7 @@ def connect():
         
 def store_probe(probe, should_overwrite=True):
     """ stores (with the option to overwrite) a new probe """    
-    cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + probe.probe_id + "'")
+    cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + str(probe.probe_id) + "'")
     results = cursor.fetchall()
     sql_statement = "INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + probe.probe_id + "','" + probe.name + "', FALSE)"
     if len(results) == 0:
