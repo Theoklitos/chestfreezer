@@ -18,16 +18,33 @@ TEMPERATURE_READINGS_TABLE_NAME = 'temperature_readings'
 PROBES_TABLE_NAME = 'probes'
 INSTRUCTIONS_TABLE_NAME = 'instructions'
 
+
+def drop_tables():
+    """ drops all the tables used in the app's db """
+    try:
+        cursor.execute("DROP TABLE " + TEMPERATURE_READINGS_TABLE_NAME)
+    except:
+        pass
+        # its ok, table doesnt exist at all    
+    try:
+        cursor.execute("DROP TABLE " + PROBES_TABLE_NAME)
+    except:
+        pass
+        # likewise
+    try:
+        cursor.execute("DROP TABLE " + INSTRUCTIONS_TABLE_NAME)
+    except:
+        pass
+        # likewise
+    db.commit()
+
 def connect():
     global db
     db = MySQLdb.connect(host=configuration.db_host(), user=configuration.db_user(), passwd=configuration.db_pwd(), db=configuration.db_name())
     global cursor
     cursor = db.cursor()
 
-    cursor.execute("DROP TABLE " + TEMPERATURE_READINGS_TABLE_NAME) 
-    cursor.execute("DROP TABLE " + PROBES_TABLE_NAME)
-    cursor.execute("DROP TABLE " + INSTRUCTIONS_TABLE_NAME)
-    db.commit()
+    drop_tables() #comment out when live
     
     # check if tables exist, init the database
     probe_tables = cursor.execute("SHOW TABLES LIKE '" + PROBES_TABLE_NAME + "'");
