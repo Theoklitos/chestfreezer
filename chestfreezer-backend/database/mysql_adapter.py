@@ -42,7 +42,7 @@ def connect():
         
 def store_probe(probe, should_overwrite=True):
     """ stores (with the option to overwrite) a new probe """    
-    probe_id_pruned = str(probe.probe_id)
+    probe_id_pruned = str(int(probe.probe_id))
     cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + probe_id_pruned + "'")
     results = cursor.fetchall()
     sql_statement = "INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + probe_id_pruned + "','" + probe.name + "', FALSE)"
@@ -51,7 +51,7 @@ def store_probe(probe, should_overwrite=True):
         print 'Registered new probe #' + probe_id_pruned
     elif len(results) == 1:
         if should_overwrite:
-            update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + probe.master + "' WHERE probe_id='" + probe.probe_id + "'"
+            update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + probe.master + "' WHERE probe_id='" + str(probe.probe_id) + "'"
             cursor.execute(update_sql)
             print 'Updated probe #' + probe_id_pruned
         else:
