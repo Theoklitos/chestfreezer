@@ -49,13 +49,13 @@ def checkHardware():
         print 'Checking device control - you should hear four clicking noises...'
         time.sleep(1)
         try:  
-            gpio.output_pin_for_time(configuration.device1_pin(), False, 1)
+            gpio.output_pin_for_time(configuration.heater_pin(), False, 1)
             time.sleep(1)
-            gpio.output_pin_for_time(configuration.device2_pin(), False, 1)
+            gpio.output_pin_for_time(configuration.freezer_pin(), False, 1)
         except ValueError as e:            
             sys.exit('Pins could not be activated, reason:\n' + str(e) + '\nTerminating.')
         sound_check_passed = do_sound_check(gpio)            
-    print 'Pins #' + configuration.device1_pin() + ' and #' + configuration.device2_pin() + ' connected correctly.'            
+    print 'GPIO pins #' + configuration.heater_pin() + ' and #' + configuration.freezer_pin() + ' connected correctly.'            
     
     # then the temperature sensor(s)
     temperature.initialize_probes()
@@ -74,7 +74,7 @@ def checkInternetConnectivity():
     except urllib2.URLError:
         do_we_have_internet = False        
     if do_we_have_internet:
-        print ' connection is good.'
+        print 'connection is good.'
     else:
         print '\nCould not reach the internet. If you want to proceed regardless then press \'y\', otherwise press any other key to exit.'
         response = misc_utils.get_single_char().lower()
@@ -89,10 +89,13 @@ def checkAndInitDatabase():
         sys.exit('Could not connect to database. Error:\n' + str(e) + '\nTerminating.')
             
 def startTemperatureRecordingThread():
-    """ starts a thread  that stored the temperature readings every second """
+    """ starts a thread that stored the temperature readings every second """
     def record_temperatures():        
         while True:        
-            mysql_adapter.store_temperatures(temperature.get_temperature_readings())            
+            try:
+                mysql_adapter.store_temperatures(temperature.get_temperature_readings())
+            except Exception as e:
+                sys.exit('Could not log temperature. Error:\n' + str(e))
             time.sleep(configuration.store_temperature_interval_seconds())
     temperature_recording_thread = Thread(target=record_temperatures, args=())
     temperature_recording_thread.start()
@@ -102,15 +105,15 @@ def startControllerThread():
 
 def startWebInterface():    
     import api.chestfreezer_api as api
-    print 'Starting web interface...'
+    print 'Starting web interface...\n'
     api.run()    
 
 if __name__ == "__main__":
-    # check if everything is in place    
-    checkImports()
+    # check if everything is in place
+    #checkImports()
     checkAndInitDatabase()
-    checkHardware()
-    checkInternetConnectivity()    
+    #checkHardware()
+    #checkInternetConnectivity()    
     
     # start threads that do all the work
     startTemperatureRecordingThread()

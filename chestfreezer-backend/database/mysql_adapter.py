@@ -9,6 +9,7 @@ import MySQLdb
 import util.configuration as configuration
 import datetime
 import hardware.temperature
+from util import misc_utils
 
 cursor = None
 db = None
@@ -26,7 +27,7 @@ def connect():
     # check if tables exist, init the database
     probe_tables = cursor.execute("SHOW TABLES LIKE '" + PROBES_TABLE_NAME + "'");
     if probe_tables == 0:
-        cursor.execute("CREATE TABLE " + PROBES_TABLE_NAME + " (probe_id INT(12), probe_name VARCHAR(100), master BOOLEAN, PRIMARY KEY(probe_id))");
+        cursor.execute("CREATE TABLE " + PROBES_TABLE_NAME + " (probe_id INT(12), name VARCHAR(100), master BOOLEAN, PRIMARY KEY(probe_id))");
         
     temperature_tables = cursor.execute("SHOW TABLES LIKE '" + TEMPERATURE_READINGS_TABLE_NAME + "'");
     if temperature_tables == 0:
@@ -63,26 +64,24 @@ def store_temperatures(temperature_readings):
             probe_id = temperature_reading.probe_id
             temperature_C = temperature_reading.temperature_C
             timestamp = datetime.datetime.fromtimestamp(temperature_reading.timestamp).strftime('%Y-%m-%d %H:%M:%S')
-            sql_statement = "INSERT INTO " + TEMPERATURE_READINGS_TABLE_NAME + " VALUES ('" + probe_id + "','" + str(temperature_C) + "','" 
-            + timestamp + "')"            
+            sql_statement = "INSERT INTO " + TEMPERATURE_READINGS_TABLE_NAME + " VALUES ('" + probe_id + "','" + str(temperature_C) + "','" + timestamp + "')"            
             cursor.execute(sql_statement)
         db.commit()        
 
 def get_readings(from_timestamp, to_timestamp):
     """ returns all the temperature readings from/upto the given timestamps """
-    found_temperature_readings = []
-    if cursor is not None and db is not None:    
-        sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME + " WHERE timestamp BETWEEN from_unixtime(" + str(from_timestamp) 
-        + ") and from_unixtime(" + str(to_timestamp) + ")"
-        cursor.execute(sql_statement);
-        all_results = cursor.fetchall()
-        for result in all_results:
-            probe_id = result[0]
-            temperature_C = result[1]                        
-            timestamp = result[2].strftime("%s")            
-            temperature_reading = hardware.temperature.TemperatureReading(probe_id, temperature_C, timestamp)
-            found_temperature_readings.append(temperature_reading)
-                        
+    print 'Asked for readings from ' + misc_utils.timestamp_to_datetime(from_timestamp).strftime("%c") + ' to ' + misc_utils.timestamp_to_datetime(to_timestamp).strftime("%c")
+    found_temperature_readings = []    
+                    
+    sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME + " WHERE timestamp BETWEEN from_unixtime(" + str(from_timestamp) + ") and from_unixtime(" + str(to_timestamp) + ")"
+    cursor.execute(sql_statement);
+    all_results = cursor.fetchall()
+    for result in all_results:
+        probe_id = result[0]
+        temperature_C = result[1]                        
+        timestamp = result[2].strftime("%s")            
+        temperature_reading = hardware.temperature.TemperatureReading(probe_id, temperature_C, timestamp)
+        found_temperature_readings.append(temperature_reading)                        
         
     return found_temperature_readings
 
@@ -96,9 +95,31 @@ def get_instructions_for_time(timestamp):
         print result        
     return found_instructions
 
+def get_all_probes():
+    """ returns all the probes """
+    all_probes = []
+    cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME)
+    all_results = cursor.fetchall()
+    for result in all_results:
+        probe_id = result[0]
+        probe_name = result[1]
+        master = result[2]
+        probe = hardware.temperature.Probe(probe_id, probe_name, master)
+        all_probes.append(probe)
+    return all_probes        
 
 def determine_master_probe():
-    """ if there is no temperature probe set as the MASTER one, will set the first one """
-    
-
-
+    """ if there is no temperature probe set as the MASTER one, will set the first one """    
+    first_result = None
+    is_anyone_master = False
+    for probe in get_all_probes():
+        if first_result is None:
+            first_result = probe
+        if probe.master:
+            is_anyone_master = True
+            break    
+    if not is_anyone_master:
+        first_result.master = True
+    store_probe(first_result)
+    print 'Auto-determined probe #' + first_result.probe_id + ' to be the master one.'    
+        

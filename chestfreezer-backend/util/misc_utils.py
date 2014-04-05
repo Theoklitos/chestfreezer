@@ -9,6 +9,7 @@ import os
 import sys    
 import termios
 import fcntl
+import datetime
 
 def get_single_char():
     """ waits for user input and immediately reads the first char without waiting for a newline. 
@@ -32,3 +33,7 @@ def get_single_char():
         termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
         fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
         return c
+    
+def timestamp_to_datetime(timestamp):
+    """ converts a unix timestamp to a datetime object """
+    return datetime.datetime.fromtimestamp(timestamp)

@@ -15,7 +15,7 @@ GPIO.setmode(GPIO.BOARD)
 def output_pin(pin_number, state):
     """ will set the (boolean) state of the given pin_number # in GPIO.BOARD mode. Throws ValueError """
     GPIO.setup(int(pin_number), GPIO.OUT)    
-    GPIO.output(int(pin_number), state)     
+    GPIO.output(int(pin_number), state)
     
 def output_pin_for_time(pin_number, state, seconds):
     """ will set the (boolean) state of the given pin_number # in GPIO.BOARD mode. 

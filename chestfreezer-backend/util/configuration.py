@@ -12,8 +12,8 @@ from ConfigParser import NoOptionError
 
 CONFIGURATION_FILE_NAME = 'configuration'
 
-DEFAULT_DEVICE1_PIN = 3
-DEFAULT_DEVICE2_PIN = 5
+DEFAULT_HEATER_PIN = 3
+DEFAULT_FREEZER_PIN = 5
 DEFAULT_DB_HOST = 'localhost'
 DEFAULT_DB_USER = 'brewmaster'
 DEFAULT_DB_PASSWORD = 'h3f3w3iz3n'
@@ -64,13 +64,13 @@ def store_temperature_interval_seconds():
     else:
         return store_interval_overwrite
 
-def device1_pin():
-    """ returns the GPIO pin # that controls the 1st plug in the relay """
-    return get_option_with_default('device1_pin', DEFAULT_DEVICE1_PIN)    
+def heater_pin():
+    """ returns the GPIO pin # that controls the heater, which is the 1st plug in the relay """
+    return get_option_with_default('heater_pin', DEFAULT_HEATER_PIN)    
 
-def device2_pin():
-    """ returns the GPIO pin # that controls the 2nd plug in the relay """
-    return get_option_with_default('device2_pin', DEFAULT_DEVICE2_PIN)
+def freezer_pin():
+    """ returns the GPIO pin # that controls the freezer, which is the 2nd plug in the relay """
+    return get_option_with_default('freezer_pin', DEFAULT_FREEZER_PIN)
     
 def get_db_host():
     """ where is the mysql database hosted? """

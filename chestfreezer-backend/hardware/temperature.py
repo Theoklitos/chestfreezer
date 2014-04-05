@@ -9,8 +9,8 @@ Initializes and takes readings from the temperature probes, also manages the nam
 import glob
 import subprocess
 import time
-import datetime
 from database import mysql_adapter
+from util import misc_utils
 
 TEMPERATURE_PROBE_PATH = '/sys/bus/w1/devices/' 
 probe_ids = []
@@ -40,8 +40,7 @@ class TemperatureReading():
         self.timestamp = float(timestamp)
                                                                 
     def __str__(self):
-        #pretty_date = self.timestamp.strftime("%A %w, %y")
-        pretty_date = datetime.datetime.fromtimestamp(self.timestamp).strftime("%c")
+        pretty_date = misc_utils.timestamp_to_datetime(self.timestamp).strftime("%c")
         return 'From probe #' + self.probe_id + ': ' + str(self.temperature_C) + 'C/' + str(self.temperature_F) + 'F. Taken at: ' + pretty_date + "."
 
 def read_temp_raw(device_file):
