@@ -90,13 +90,13 @@ class device:
             raise web.badrequest()
     def POST(self, name):
         _auth_check()
-        variables = web.input()
-        print str(len(variables)) + ':' + str(variables)
+        variables = web.input()        
         if len(variables) != 1:
             try:
                 if name is None:
                     raise web.badrequest()                
                 raw_state = variables.get('state')
+                print 'raw state: ' + raw_state
                 boolean_state = None
                 remove_override = False
                 if raw_state in ['on', 'ON', 'On', 'True', 'true', 'TRUE']:
