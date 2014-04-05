@@ -38,7 +38,7 @@ def start_instruction_thread():
     def follow_instructions():        
         while True:        
             try:
-                pass                
+                print 'Updating instructions...'
             except Exception as e:
                 print 'Error while looking at instructions:\n' + str(e)
             time.sleep(configuration.instruction_interval_seconds())                    

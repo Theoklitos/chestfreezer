@@ -95,7 +95,7 @@ class device:
             try:
                 if name is None:
                     raise web.badrequest()                
-                raw_state = float(variables.get('state'))
+                raw_state = variables.get('state')
                 boolean_state = None
                 remove_override = False
                 if raw_state in ['on', 'ON', 'On', 'True', 'true', 'TRUE']:
