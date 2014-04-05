@@ -12,7 +12,6 @@ import sys
 from util import json_parser
 from control import brew_controller
 
-
 def _pretty_state_identifier(state):
     """ returns 'off' for False and 'on' for True """
     if state:

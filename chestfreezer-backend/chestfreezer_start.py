@@ -44,7 +44,7 @@ def do_sound_check(gpio):
 def checkHardware():
     # first the GPIO pins
     import hardware.chestfreezer_gpio as gpio    
-    sound_check_passed = False;
+    sound_check_passed = True;
     while not sound_check_passed:
         print 'Checking device control - you should hear four clicking noises...'
         time.sleep(1)
@@ -93,8 +93,7 @@ def startTemperatureRecordingThread():
     def record_temperatures():        
         while True:        
             try:
-                mysql_adapter.store_temperatures(temperature.get_temperature_readings())
-                print 'Stored temperature.'
+                mysql_adapter.store_temperatures(temperature.get_temperature_readings())                
             except Exception as e:
                 print 'Could not log temperature. Error:\n' + str(e)
             time.sleep(configuration.store_temperature_interval_seconds())

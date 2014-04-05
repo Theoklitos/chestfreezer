@@ -24,6 +24,11 @@ def connect():
     global cursor
     cursor = db.cursor()
 
+    cursor.execute("DROP TABLE " + TEMPERATURE_READINGS_TABLE_NAME) 
+    cursor.execute("DROP TABLE " + PROBES_TABLE_NAME)
+    cursor.execute("DROP TABLE " + INSTRUCTIONS_TABLE_NAME)
+    db.commit()
+    
     # check if tables exist, init the database
     probe_tables = cursor.execute("SHOW TABLES LIKE '" + PROBES_TABLE_NAME + "'");
     if probe_tables == 0:
@@ -62,7 +67,6 @@ def store_probe(probe, should_overwrite=True):
 def store_temperatures(temperature_readings):
     """ stores the given list of temperature readings """    
     for temperature_reading in temperature_readings:
-        print 'About to add ' + temperature_reading + ' to cursor...'
         probe_id = temperature_reading.probe_id
         temperature_C = temperature_reading.temperature_C
         timestamp = datetime.datetime.fromtimestamp(temperature_reading.timestamp).strftime('%Y-%m-%d %H:%M:%S')
@@ -74,7 +78,7 @@ def get_readings(from_timestamp, to_timestamp):
     """ returns all the temperature readings from/upto the given timestamps """
     print 'Asked for readings from ' + misc_utils.timestamp_to_datetime(from_timestamp).strftime("%c") + ' to ' + misc_utils.timestamp_to_datetime(to_timestamp).strftime("%c")
     found_temperature_readings = []    
-                    
+
     sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME + " WHERE timestamp BETWEEN from_unixtime(" + str(from_timestamp) + ") and from_unixtime(" + str(to_timestamp) + ")"
     cursor.execute(sql_statement);
     all_results = cursor.fetchall()
