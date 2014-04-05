@@ -34,9 +34,13 @@ class Probe():
             prefix = ', master probe'
         return 'Probe #' + self.probe_id + ', name: ' + self.name + prefix 
 
+def _get_new_timestamp():
+    """ gets a new timestamp as an integer """
+    return int(time.time())
+
 class TemperatureReading():
     """ represents a single temperature probe reading from a moment in time """            
-    def __init__(self, probe_id, temperature_C, timestamp=int(time.time())):
+    def __init__(self, probe_id, temperature_C, timestamp=_get_new_timestamp()):
         self.probe_id = str(probe_id)
         self.temperature_C = temperature_C
         self.temperature_F = temperature_C * 9.0 / 5.0 + 32.0
