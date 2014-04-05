@@ -30,7 +30,10 @@ def get_probe_array_as_json(probe_list):
 
 def get_probe_as_json(probe):
     """ returns a single temp probe  as a json object """
-    result = '{\n  "probe_id" : "' + str(probe.probe_id) + '",\n  "name" : "' + str(probe.name) + '",\n"  master" : "' + str(probe.master) + '"\n}'
+    master_value = 'False'
+    if probe.master == 1:
+        master_value = 'True'
+    result = '{\n  "probe_id" : "' + str(probe.probe_id) + '",\n  "name" : "' + str(probe.name) + '",\n  "master" : "' + master_value + '"\n}'
     return result 
     
 

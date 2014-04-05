@@ -110,10 +110,10 @@ def startWebInterface():
 
 if __name__ == "__main__":
     # check if everything is in place
-    #checkImports()
+    checkImports()
     checkAndInitDatabase()
-    #checkHardware()
-    #checkInternetConnectivity()    
+    checkHardware()
+    checkInternetConnectivity()    
     
     # start threads that do all the work
     startTemperatureRecordingThread()
