@@ -1,5 +1,5 @@
-device1_pin = 3
-device2_pin = 5
+heater_pin = 3
+freezer_pin = 5
 
 db_user = brewmaster
 

@@ -12,8 +12,8 @@ from ConfigParser import NoOptionError
 
 CONFIGURATION_FILE_NAME = 'configuration'
 
-DEFAULT_HEATER_PIN = 3
-DEFAULT_FREEZER_PIN = 5
+DEFAULT_HEATER_PIN = '3'
+DEFAULT_FREEZER_PIN = '5'
 DEFAULT_DB_HOST = 'localhost'
 DEFAULT_DB_USER = 'brewmaster'
 DEFAULT_DB_PASSWORD = 'h3f3w3iz3n'
@@ -41,7 +41,7 @@ if does_config_file_exist():
 else:
     print 'No configuration file found, will use default configuration values.'
 
-def get_option_with_default(option_name, default_value):
+def _get_option_with_default(option_name, default_value):
     """ if the option exists, returns its value. If it is empty or does not exist, returns the default value"""
     try:
         option_value = Config.getoption(option_name)        
@@ -60,32 +60,32 @@ def set_store_temperature_interval_seconds(seconds):
 def store_temperature_interval_seconds():
     """ returns every how many seconds should the app store temperature readings in the BD """
     if store_interval_overwrite is None:
-        return get_option_with_default('temperature_store_interval_time', DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS)
+        return _get_option_with_default('temperature_store_interval_time', DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS)
     else:
         return store_interval_overwrite
 
 def heater_pin():
     """ returns the GPIO pin # that controls the heater, which is the 1st plug in the relay """
-    return get_option_with_default('heater_pin', DEFAULT_HEATER_PIN)    
+    return _get_option_with_default('heater_pin', DEFAULT_HEATER_PIN)    
 
 def freezer_pin():
     """ returns the GPIO pin # that controls the freezer, which is the 2nd plug in the relay """
-    return get_option_with_default('freezer_pin', DEFAULT_FREEZER_PIN)
+    return _get_option_with_default('freezer_pin', DEFAULT_FREEZER_PIN)
     
-def get_db_host():
+def db_host():
     """ where is the mysql database hosted? """
-    return get_option_with_default('db_host', DEFAULT_DB_HOST)
+    return _get_option_with_default('db_host', DEFAULT_DB_HOST)
     
-def get_db_user():
+def db_user():
     """ the user name that has access to the database """
-    return get_option_with_default('db_user', DEFAULT_DB_USER)
+    return _get_option_with_default('db_user', DEFAULT_DB_USER)
 
-def get_db_pwd():    
+def db_pwd():    
     """ the password for the db user """
-    return get_option_with_default('db_password', DEFAULT_DB_PASSWORD)
-    
-def get_db_name():
+    return _get_option_with_default('db_password', DEFAULT_DB_PASSWORD)
+
+def db_name():
     """ which database should our app use? """
-    return get_option_with_default('db_name', DEFAULT_DB_NAME)
+    return _get_option_with_default('db_name', DEFAULT_DB_NAME)
 
 

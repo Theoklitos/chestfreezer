@@ -20,7 +20,7 @@ INSTRUCTIONS_TABLE_NAME = 'instructions'
 
 def connect():
     global db
-    db = MySQLdb.connect(host=configuration.get_db_host(), user=configuration.get_db_user(), passwd=configuration.get_db_pwd(), db=configuration.get_db_name())
+    db = MySQLdb.connect(host=configuration.db_host(), user=configuration.db_user(), passwd=configuration.db_pwd(), db=configuration.db_name())
     global cursor
     cursor = db.cursor()
 
