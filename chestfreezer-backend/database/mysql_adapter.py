@@ -51,7 +51,7 @@ def store_probe(probe, should_overwrite=True):
         print 'Registered new probe #' + probe_id_pruned
     elif len(results) == 1:
         if should_overwrite:
-            update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + str(probe.master) + "' WHERE probe_id='" + probe_id_pruned + "'"
+            update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + str(int(probe.master)) + "' WHERE probe_id='" + probe_id_pruned + "'"
             cursor.execute(update_sql)
             print 'Updated probe #' + probe_id_pruned
         else:

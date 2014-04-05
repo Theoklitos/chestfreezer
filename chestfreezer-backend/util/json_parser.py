@@ -11,7 +11,7 @@ def get_temperature_reading_array_as_json(temperature_reading_list):
     result = '['
     for temperature_reading in temperature_reading_list:
         result += '\n' + get_temperature_reading_as_json(temperature_reading) + ','
-    if temperature_reading_list is not None:
+    if len(temperature_reading_list) != 0:
         result = result[:-1] 
     return result + '\n]'
     

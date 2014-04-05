@@ -94,6 +94,7 @@ def startTemperatureRecordingThread():
         while True:        
             try:
                 mysql_adapter.store_temperatures(temperature.get_temperature_readings())
+                print 'Stored temp'
             except Exception as e:
                 sys.exit('Could not log temperature. Error:\n' + str(e))
             time.sleep(configuration.store_temperature_interval_seconds())
