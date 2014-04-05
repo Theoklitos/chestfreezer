@@ -113,16 +113,15 @@ urls = (
     
 def run():
     """ call to web.py run(), starts the web stuff """
-    app = web.application(urls, globals())    
-    app.run()
-    
-    #try:
-    #except KeyboardInterrupt:
-    #    print 'Interrupted, shutting down...'
+    app = web.application(urls, globals())
+    try:    
+        app.run()
+    except KeyboardInterrupt:
+        print 'Interrupted, shutting down...'
     #    # stop threads, etc?
-    #    import hardware.chestfreezer_gpio as gpio
-    #    gpio.cleanup()
-    #    sys.exit("Goodbye!")
+        import hardware.chestfreezer_gpio as gpio
+        gpio.cleanup()
+        sys.exit("Goodbye!")
     
     
     

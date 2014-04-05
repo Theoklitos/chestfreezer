@@ -60,15 +60,15 @@ def store_probe(probe, should_overwrite=True):
     db.commit()  
 
 def store_temperatures(temperature_readings):
-    """ stores the given list of temperature readings """
-    if cursor is not None and db is not None:
-        for temperature_reading in temperature_readings:
-            probe_id = temperature_reading.probe_id
-            temperature_C = temperature_reading.temperature_C
-            timestamp = datetime.datetime.fromtimestamp(temperature_reading.timestamp).strftime('%Y-%m-%d %H:%M:%S')
-            sql_statement = "INSERT INTO " + TEMPERATURE_READINGS_TABLE_NAME + " VALUES ('" + probe_id + "','" + str(temperature_C) + "','" + timestamp + "')"            
-            cursor.execute(sql_statement)
-        db.commit()        
+    """ stores the given list of temperature readings """    
+    for temperature_reading in temperature_readings:
+        print 'About to add ' + temperature_reading + ' to cursor...'
+        probe_id = temperature_reading.probe_id
+        temperature_C = temperature_reading.temperature_C
+        timestamp = datetime.datetime.fromtimestamp(temperature_reading.timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        sql_statement = "INSERT INTO " + TEMPERATURE_READINGS_TABLE_NAME + " VALUES ('" + probe_id + "','" + str(temperature_C) + "','" + timestamp + "')"            
+        cursor.execute(sql_statement)
+    db.commit()        
 
 def get_readings(from_timestamp, to_timestamp):
     """ returns all the temperature readings from/upto the given timestamps """
