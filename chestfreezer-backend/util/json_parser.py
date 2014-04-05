@@ -11,7 +11,9 @@ def get_temperature_reading_array_as_json(temperature_reading_list):
     result = '['
     for temperature_reading in temperature_reading_list:
         result += '\n' + get_temperature_reading_as_json(temperature_reading) + ','
-    return result[:-1] + '\n]'
+    if temperature_reading_list is not None:
+        result = result[:-1] 
+    return result + '\n]'
     
 def get_temperature_reading_as_json(temperature_reading):
     """ returns a single temp reading as a json object """    
@@ -28,7 +30,7 @@ def get_probe_array_as_json(probe_list):
 
 def get_probe_as_json(probe):
     """ returns a single temp probe  as a json object """
-    result = '{\n  "probe_id" : "' + probe.probe_id + '",\n  "name" : "' + probe.name + '",\n"  master" : "' + str(probe.master) + '"\n}'
+    result = '{\n  "probe_id" : "' + str(probe.probe_id) + '",\n  "name" : "' + str(probe.name) + '",\n"  master" : "' + str(probe.master) + '"\n}'
     return result 
     
 
