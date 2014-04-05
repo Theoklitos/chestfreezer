@@ -20,6 +20,8 @@ DEFAULT_DB_PASSWORD = 'h3f3w3iz3n'
 DEFAULT_DB_NAME = 'chestfreezer'
 DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS = 5
 store_interval_overwrite = None
+DEFAULT_WEB_USER = 'brewmaster'
+DEFAULT_WEB_PASSWORD = 'h3f3w3iz3n'
 
 def does_config_file_exist():
     return config_file is not None
@@ -63,6 +65,14 @@ def store_temperature_interval_seconds():
         return _get_option_with_default('temperature_store_interval_time', DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS)
     else:
         return store_interval_overwrite
+
+def web_user():
+    """ returns the username for authentication in the web interface """
+    return _get_option_with_default('web_user', DEFAULT_WEB_USER)
+
+def web_pwd():
+    """ returns the password for authentication in the web interface """
+    return _get_option_with_default('web_pwd', DEFAULT_WEB_PASSWORD)
 
 def heater_pin():
     """ returns the GPIO pin # that controls the heater, which is the 1st plug in the relay """

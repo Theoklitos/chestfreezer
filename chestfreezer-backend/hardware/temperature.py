@@ -15,6 +15,9 @@ from util import misc_utils
 TEMPERATURE_PROBE_PATH = '/sys/bus/w1/devices/' 
 probe_ids = []
 
+last_master_reading = None
+master_probe_id = None 
+
 class Probe():
     """ represents a temperature probe """
     def __init__(self, probe_id, name=None, master=False):
@@ -37,7 +40,7 @@ class TemperatureReading():
         self.probe_id = str(probe_id)
         self.temperature_C = temperature_C
         self.temperature_F = temperature_C * 9.0 / 5.0 + 32.0
-        self.timestamp = float(timestamp)
+        self.timestamp = int(timestamp)
                                                                 
     def __str__(self):
         pretty_date = misc_utils.timestamp_to_datetime(self.timestamp).strftime("%c")
@@ -45,8 +48,8 @@ class TemperatureReading():
 
 def read_temp_raw(device_file):
     """ uses cat to read the file """
-    catdata = subprocess.Popen(['cat',device_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out,err = catdata.communicate()  # @UnusedVariable
+    catdata = subprocess.Popen(['cat', device_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = catdata.communicate()  # @UnusedVariable
     out_decode = out.decode('utf-8')
     lines = out_decode.split('\n')
     return lines
@@ -54,18 +57,12 @@ def read_temp_raw(device_file):
 def initialize_probes():
     """ looks for existing probes in the /sys folder and writes their ids to the database """        
     for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):
-        probe_id = device_folder.split('28-',1)[1]
+        probe_id = device_folder.split('28-', 1)[1]
         probe_ids.append(probe_id)
             
     for probe_id in probe_ids:
         probe = Probe(probe_id)
         mysql_adapter.store_probe(probe, False)
-
-def set_probe_name(probe_id, probe_name):
-    pass
-
-def set_main_probe(probe_id):
-    pass
 
 def get_temperature_readings():
     """ reads (immediately) the temperature readings from the probes returns a list with any temperature read """
@@ -78,9 +75,27 @@ def get_temperature_readings():
             lines = read_temp_raw(device_file)
         equals_pos = lines[1].find('t=')
         if equals_pos != -1:
-            temp_string = lines[1][equals_pos+2:]
+            temp_string = lines[1][equals_pos + 2:]
             temperature_C = float(temp_string) / 1000.0            
             reading = TemperatureReading(probe_id, temperature_C)
             readings.append(reading)
+            if probe_id == master_probe_id:
+                last_master_reading = reading
         return readings        
-        
+
+def determine_master_probe():
+    """ if there is no temperature probe set as the MASTER one, will set the first one """    
+    first_result = None
+    is_anyone_master = False
+    for probe in mysql_adapter.get_all_probes():
+        if first_result is None:
+            first_result = probe
+        if probe.master:
+            is_anyone_master = True
+            break    
+    if not is_anyone_master:
+        first_result.master = True
+        mysql_adapter.store_probe(first_result)
+        master_probe_id = first_result.probe_id
+        print 'Auto-determined probe #' + str(first_result.probe_id) + ' to be the master one.' 
+

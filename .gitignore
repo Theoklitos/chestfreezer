@@ -4,6 +4,7 @@
 *.project
 *.pydevproject
 *~
+sessions/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -70,6 +70,7 @@ def store_temperatures(temperature_readings):
         probe_id = temperature_reading.probe_id
         temperature_C = temperature_reading.temperature_C
         timestamp = datetime.datetime.fromtimestamp(temperature_reading.timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        print 'Storing temperature reading: ' + str(temperature_reading)
         sql_statement = "INSERT INTO " + TEMPERATURE_READINGS_TABLE_NAME + " VALUES ('" + probe_id + "','" + str(temperature_C) + "','" + timestamp + "')"            
         cursor.execute(sql_statement)
     db.commit()        
@@ -94,12 +95,43 @@ def get_readings(from_timestamp, to_timestamp):
 def get_instructions_for_time(timestamp):
     """ reads the instructions table and returns all the instructions that would be valid for the given time """
     found_instructions = []
-    sql_statement = "SELECT * FROM " + INSTRUCTIONS_TABLE_NAME + " WHERE from_unixtime(" + timestamp +") BETWEEN from and until"
+    sql_statement = "SELECT * FROM " + INSTRUCTIONS_TABLE_NAME + " WHERE from_unixtime(" + timestamp + ") BETWEEN from and until"
     cursor.execute(sql_statement);
     all_results = cursor.fetchall()
     for result in all_results:
         print result        
     return found_instructions
+
+def get_master_probe():
+    """ returns the probe set to master """
+    for probe in get_all_probes():
+        if probe.master:
+            return probe
+
+def set_probe_name(probe_id, new_name):
+    """ changes the probe's name """
+    for probe in get_all_probes():
+        if probe.probe_id == probe_id:
+            probe.name = new_name
+            store_probe(probe)
+            return
+    raise Exception('Could not find probe #' + probe_id + ', no update done.')    
+    
+
+def set_main_probe(probe_id):
+    """ sets the given probe to Master, and all the other ones to not-master """
+    found = False
+    for probe in get_all_probes():
+        if probe.probe_id == probe_id:
+            probe.master = True
+            store_probe(probe)
+            found = True
+        else:
+            probe.master = False
+            store_probe(probe)            
+    if not found:
+        hardware.temperature.determine_master_probe()                
+        raise Exception('Could not find probe #' + probe_id + ', no update done.')
 
 def get_all_probes():
     """ returns all the probes """
@@ -112,20 +144,7 @@ def get_all_probes():
         master = result[2]
         probe = hardware.temperature.Probe(probe_id, probe_name, master)
         all_probes.append(probe)
-    return all_probes        
+    return all_probes      
 
-def determine_master_probe():
-    """ if there is no temperature probe set as the MASTER one, will set the first one """    
-    first_result = None
-    is_anyone_master = False
-    for probe in get_all_probes():
-        if first_result is None:
-            first_result = probe
-        if probe.master:
-            is_anyone_master = True
-            break    
-    if not is_anyone_master:
-        first_result.master = True
-        store_probe(first_result)
-        print 'Auto-determined probe #' + str(first_result.probe_id) + ' to be the master one.'    
+   
         

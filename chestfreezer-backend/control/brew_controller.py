@@ -6,7 +6,7 @@ Controls the temperature based on readings and user input. Sort of the main logi
 @author: theoklitos
 '''
 from database import mysql_adapter
-from hardware import chestfreezer_gpio
+#from hardware import chestfreezer_gpio
 from util import configuration
 
 temperature_override = None
@@ -43,13 +43,13 @@ def _set_heater(should_activate):
     """ sets the heater state to on/off directly """
     global heater_state
     heater_state = not should_activate
-    chestfreezer_gpio.output_pin(configuration.heater_pin(), not should_activate) 
+    #chestfreezer_gpio.output_pin(configuration.heater_pin(), not should_activate) 
 
 def _set_freezer(should_activate):
     """ sets the freezer state to on/off directly """
     global freezer_state
     freezer_state = not should_activate
-    chestfreezer_gpio.output_pin(configuration.freezer_pin(), not should_activate) 
+    #chestfreezer_gpio.output_pin(configuration.freezer_pin(), not should_activate) 
         
 def remove_heater_override():
     """ removes any override to the heater state """

@@ -44,7 +44,7 @@ def do_sound_check(gpio):
 def checkHardware():
     # first the GPIO pins
     import hardware.chestfreezer_gpio as gpio    
-    sound_check_passed = False;
+    sound_check_passed = True;
     while not sound_check_passed:
         print 'Checking device control - you should hear four clicking noises...'
         time.sleep(1)
@@ -64,7 +64,7 @@ def checkHardware():
         sys.exit('No temperature probes were detected, check your wiring. Terminating.')
     else:
         print 'Found ' + str(len(probes)) + ' functional temperature sensor(s).'
-        mysql_adapter.determine_master_probe()            
+        temperature.determine_master_probe()            
 
 def checkInternetConnectivity():    
     print 'Checking internet connectivity...',
@@ -93,19 +93,22 @@ def startTemperatureRecordingThread():
     def record_temperatures():        
         while True:        
             try:
-                mysql_adapter.store_temperatures(temperature.get_temperature_readings())                
+                readings =temperature.get_temperature_readings()
+                if readings is not None:
+                    mysql_adapter.store_temperatures()                
             except Exception as e:
                 print 'Could not log temperature. Error:\n' + str(e)
-            time.sleep(configuration.store_temperature_interval_seconds())
+            time.sleep(configuration.store_temperature_interval_seconds())    
     temperature_recording_thread = Thread(target=record_temperatures, args=())
+    temperature_recording_thread.daemon=True
     temperature_recording_thread.start()
 
 def startControllerThread():
     pass
 
-def startWebInterface():    
+def startWebInterface():        
     import api.chestfreezer_api as api
-    print 'Starting web interface...\n'
+    print 'Starting web interface...\n'        
     api.run()    
 
 if __name__ == "__main__":

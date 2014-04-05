@@ -5,6 +5,15 @@ Simple json marshalling utils for the classes in this project
 
 @author: theoklitos
 '''
+from control import brew_controller
+
+
+def _pretty_state_identifier(state):
+    """ returns 'off' for False and 'on' for True """
+    if state:
+        return 'on'
+    else:
+        return 'off'
 
 def get_temperature_reading_array_as_json(temperature_reading_list):
     """ returns a list of temp readings as a json array """
@@ -20,6 +29,17 @@ def get_temperature_reading_as_json(temperature_reading):
     result = '{\n  "probe_id" : "' + temperature_reading.probe_id + '",\n  "temperature_C" : "' + str(temperature_reading.temperature_C) + '",\n  "temperature_F" : "' + str(temperature_reading.temperature_F) + '",\n  "timestamp" : "' + str(temperature_reading.timestamp) + '"\n}'
     return result
 
+def get_heater_device_json():
+    """ returns information about the heater in json """
+    return '{\n    "state" : "' + _pretty_state_identifier(brew_controller.heater_state) + '",\n    "overridden" : "' + str(brew_controller.heater_override).lower() + '"\n  }'
+
+def get_freezer_device_json():
+    """ returns information about the freezer in json """
+    return '{\n    "state" : "' + _pretty_state_identifier(brew_controller.freezer_state) + '",\n    "overridden" : "' + str(brew_controller.freezer_override).lower() + '"\n  }'
+
+def get_both_devices_json():
+    """ returns information about both the freezer and the heater as a json object """
+    return '{\n  "heater" : ' + get_heater_device_json() + ',\n  "freezer" : ' + get_freezer_device_json() + '\n}'
 
 def get_probe_array_as_json(probe_list):
     """ returns a list of temp probes as a json array """
