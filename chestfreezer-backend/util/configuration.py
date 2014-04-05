@@ -64,9 +64,9 @@ def set_store_temperature_interval_seconds(seconds):
 def store_temperature_interval_seconds():
     """ returns every how many seconds should the temperature readings be stored in the DB """
     if store_interval_overwrite is None:
-        return _get_option_with_default('temperature_store_interval_time_seconds', DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS)
+        return float(_get_option_with_default('temperature_store_interval_time_seconds', DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS))
     else:
-        return store_interval_overwrite
+        return float(store_interval_overwrite)
 
 def web_user():
     """ returns the username for authentication in the web interface """
@@ -103,9 +103,9 @@ def db_name():
 def instruction_interval_seconds():
     """ returns every how many seconds there should be a check for new instructions """
     if instruction_interval_overwrite is None:
-        return _get_option_with_default('instruction_check_interval_time_seconds', DEFAULT_INSTRUCTION_CHECK_INTERVAL_SECONDS)
+        return float(_get_option_with_default('instruction_check_interval_time_seconds', DEFAULT_INSTRUCTION_CHECK_INTERVAL_SECONDS))
     else:
-        return instruction_interval_overwrite
+        return float(instruction_interval_overwrite)
 
 def set_instruction_interval_seconds(seconds):
     """ sets every how many seconds should there be a check for new instructions """
