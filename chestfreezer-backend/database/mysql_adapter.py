@@ -123,5 +123,5 @@ def determine_master_probe():
     if not is_anyone_master:
         first_result.master = True
         store_probe(first_result)
-        print 'Auto-determined probe #' + first_result.probe_id + ' to be the master one.'    
+        print 'Auto-determined probe #' + str(first_result.probe_id) + ' to be the master one.'    
         
