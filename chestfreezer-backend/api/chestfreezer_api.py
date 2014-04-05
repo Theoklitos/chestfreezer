@@ -15,7 +15,7 @@ from hardware import temperature
 
 def _is_authenticated():
     """ checks if the user is authenticated, by his sessions """
-    #return session.login == 1 TODO
+    # return session.login == 1 TODO
     return True
     
 def _auth_check():
@@ -123,16 +123,16 @@ class device:
                 raise web.badrequest()
         else:        
             raise web.badrequest()
-    
-class probes:
-    """ temperature probe controller """
+
+class probe:
+    """ controller for a single temperature probe """
     def GET(self, probe_id):
         _auth_check()
-        if probe_id is None:
-            probe_list = mysql_adapter.get_all_probes()
-            return json_parser.get_probe_array_as_json(probe_list)
-        else:
-            return probe_id
+        try:
+            probe = mysql_adapter.get_probe_by_id(probe_id)
+            return json_parser.get_probe_as_json(probe)
+        except Exception as e:
+            raise web.badrequest(str(e))
     def POST(self, probe_id):
         _auth_check()
         if probe_id is None:
@@ -152,6 +152,13 @@ class probes:
             except Exception as e:
                 print 'Could not rename probe:\n' + str(e)
                 raise web.badrequest()
+            
+class probes:
+    """ controller for all temperature probes """
+    def GET(self):
+        _auth_check()        
+        probe_list = mysql_adapter.get_all_probes()
+        return json_parser.get_probe_array_as_json(probe_list)
 
 class instructions:
     """ temperature instructions controller """
@@ -175,7 +182,7 @@ urls = (
         '/chestfreezer_api/probes', 'probes',
         '/chestfreezer_api/probe/(.+)', 'probe',
         
-        '/chestfreezer_api/instructions', 'instructions'          
+        '/chestfreezer_api/instructions', 'instructions'     
 )
     
 app = web.application(urls, globals())

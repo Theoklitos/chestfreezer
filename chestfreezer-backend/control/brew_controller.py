@@ -6,8 +6,10 @@ Controls the temperature based on readings and user input. Sort of the main logi
 @author: theoklitos
 '''
 from database import mysql_adapter
-#from hardware import chestfreezer_gpio
-from util import configuration
+from hardware import chestfreezer_gpio
+from util import configuration, misc_utils
+import time
+from threading import Thread
 
 temperature_override = None
 temperature_from_instructions = None
@@ -17,12 +19,32 @@ freezer_state = False
 heater_override = False
 heater_state = False
 
+current_instruction = None
+
 class Instruction():
     """ an instruction that dictates what the temperature(C) should be, and in which time period it should be so """
-    def __init__(self, start_timestamp, end_timestamp, description='No description given'):
+    def __init__(self, instruction_id, target_temperature, start_timestamp, end_timestamp, description='No description given'):
+        self.instruction_id = str(instruction_id)
+        self.target_temperature = target_temperature
         self.start_timestamp = start_timestamp
         self.end_timestamp = end_timestamp
         self.description = description
+        
+    def __str__(self):
+        return 'Instruction #' + self.instruction_id + ', description: "' + self.description + '", from ' + misc_utils.timestamp_to_datetime(self.start_timestamp) + ' to ' + misc_utils.timestamp_to_datetime(self.to_timestamp) + '. Target temp: ' + self.target_temperature + 'C'  
+
+def start_instruction_thread():
+    """ starts the thread that determines which instruction to follow and when """
+    def follow_instructions():        
+        while True:        
+            try:
+                pass                
+            except Exception as e:
+                print 'Error while looking at instructions:\n' + str(e)
+            time.sleep(configuration.instruction_interval_seconds())                    
+    instruction_thread = Thread(target=follow_instructions, args=())
+    instruction_thread.daemon = True
+    instruction_thread.start()
 
 def set_temperature_overwrite(temperature_C):
     """ will set the temperature to the given degree (C), overwriting any other instructions """
@@ -43,31 +65,31 @@ def _set_heater(should_activate):
     """ sets the heater state to on/off directly """
     global heater_state
     heater_state = not should_activate
-    #chestfreezer_gpio.output_pin(configuration.heater_pin(), not should_activate) 
+    chestfreezer_gpio.output_pin(configuration.heater_pin(), not should_activate) 
 
 def _set_freezer(should_activate):
     """ sets the freezer state to on/off directly """
     global freezer_state
     freezer_state = not should_activate
-    #chestfreezer_gpio.output_pin(configuration.freezer_pin(), not should_activate) 
+    chestfreezer_gpio.output_pin(configuration.freezer_pin(), not should_activate) 
         
 def remove_heater_override():
     """ removes any override to the heater state """
     global heater_override 
     heater_override = False
-    #TODO instruction call asap
-    #TODO
-    #TODO
-    #TODO
+    # TODO instruction call asap
+    # TODO
+    # TODO
+    # TODO
 
 def remove_freezer_override():
     """ removes any override to the freezer state """
     global freezer_override 
     freezer_override = False
-    #TODO instruction call asap
-    #TODO
-    #TODO
-    #TODO    
+    # TODO instruction call asap
+    # TODO
+    # TODO
+    # TODO    
     
 def set_heater_override(should_activate):
     """ turns the heater on or off regardless of instructions """

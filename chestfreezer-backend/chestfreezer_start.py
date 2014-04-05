@@ -100,11 +100,13 @@ def startTemperatureRecordingThread():
                 print 'Could not log temperature. Error:\n' + str(e)
             time.sleep(configuration.store_temperature_interval_seconds())    
     temperature_recording_thread = Thread(target=record_temperatures, args=())
-    temperature_recording_thread.daemon=True
+    temperature_recording_thread.daemon = True
     temperature_recording_thread.start()
 
 def startControllerThread():
-    pass
+    """ starts the main logic component, which checks for instructions and also maintains the temperature """
+    import control.brew_controller as controller
+    controller.start_instruction_thread()
 
 def startWebInterface():        
     import api.chestfreezer_api as api

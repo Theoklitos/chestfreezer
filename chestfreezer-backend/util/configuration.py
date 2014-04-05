@@ -20,6 +20,8 @@ DEFAULT_DB_PASSWORD = 'h3f3w3iz3n'
 DEFAULT_DB_NAME = 'chestfreezer'
 DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS = 5
 store_interval_overwrite = None
+DEFAULT_INSTRUCTION_CHECK_INTERVAL_SECONDS = 60
+instruction_interval_overwrite = None
 DEFAULT_WEB_USER = 'brewmaster'
 DEFAULT_WEB_PASSWORD = 'h3f3w3iz3n'
 
@@ -55,14 +57,14 @@ def _get_option_with_default(option_name, default_value):
         return default_value
 
 def set_store_temperature_interval_seconds(seconds):
-    """ sets every how many seconds should the app store temperature readings in the BD """
+    """ sets every how many seconds should the temperature readings be stored in the DB """
     global store_interval_overwrite
     store_interval_overwrite = seconds
 
 def store_temperature_interval_seconds():
-    """ returns every how many seconds should the app store temperature readings in the BD """
+    """ returns every how many seconds should the temperature readings be stored in the DB """
     if store_interval_overwrite is None:
-        return _get_option_with_default('temperature_store_interval_time', DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS)
+        return _get_option_with_default('temperature_store_interval_time_seconds', DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS)
     else:
         return store_interval_overwrite
 
@@ -98,4 +100,15 @@ def db_name():
     """ which database should our app use? """
     return _get_option_with_default('db_name', DEFAULT_DB_NAME)
 
+def instruction_interval_seconds():
+    """ returns every how many seconds there should be a check for new instructions """
+    if instruction_interval_overwrite is None:
+        return _get_option_with_default('instruction_check_interval_time_seconds', DEFAULT_INSTRUCTION_CHECK_INTERVAL_SECONDS)
+    else:
+        return instruction_interval_overwrite
+
+def set_instruction_interval_seconds(seconds):
+    """ sets every how many seconds should there be a check for new instructions """
+    global instruction_interval_overwrite
+    instruction_interval_overwrite = seconds
 
