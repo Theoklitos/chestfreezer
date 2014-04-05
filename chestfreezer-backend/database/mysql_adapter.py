@@ -42,18 +42,20 @@ def connect():
         
 def store_probe(probe, should_overwrite=True):
     """ stores (with the option to overwrite) a new probe """    
-    cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + str(probe.probe_id) + "'")
+    probe_id_pruned = str(probe.probe_id)
+    cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + probe_id_pruned + "'")
     results = cursor.fetchall()
-    sql_statement = "INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + str(probe.probe_id) + "','" + probe.name + "', FALSE)"
+    sql_statement = "INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + probe_id_pruned + "','" + probe.name + "', FALSE)"
     if len(results) == 0:
         cursor.execute(sql_statement)
-        print 'Registered new probe #' + probe.probe_id
+        print 'Registered new probe #' + probe_id_pruned
     elif len(results) == 1:
         if should_overwrite:
-            cursor.execute(sql_statement)
-            print 'Updated probe #' + probe.probe_id
+            update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + probe.master + "' WHERE probe_id='" + probe.probe_id + "'"
+            cursor.execute(update_sql)
+            print 'Updated probe #' + probe_id_pruned
         else:
-            print 'Probe #' + probe.probe_id + ' is already registered.'
+            print 'Probe #' + probe_id_pruned + ' is already registered.'
             return
     db.commit()  
 
@@ -120,6 +122,6 @@ def determine_master_probe():
             break    
     if not is_anyone_master:
         first_result.master = True
-    store_probe(first_result)
-    print 'Auto-determined probe #' + first_result.probe_id + ' to be the master one.'    
+        store_probe(first_result)
+        print 'Auto-determined probe #' + first_result.probe_id + ' to be the master one.'    
         
