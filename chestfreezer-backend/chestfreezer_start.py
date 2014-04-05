@@ -44,7 +44,7 @@ def do_sound_check(gpio):
 def checkHardware():
     # first the GPIO pins
     import hardware.chestfreezer_gpio as gpio    
-    sound_check_passed = True;
+    sound_check_passed = False;
     while not sound_check_passed:
         print 'Checking device control - you should hear four clicking noises...'
         time.sleep(1)
