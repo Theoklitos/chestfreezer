@@ -21,7 +21,7 @@ master_probe_id = None
 class Probe():
     """ represents a temperature probe """
     def __init__(self, probe_id, name=None, master=False):
-        self.probe_id = probe_id
+        self.probe_id = str(probe_id)
         if name is None:
             self.name = str(probe_id)
         else:
