@@ -41,7 +41,7 @@ def _get_new_timestamp():
 class TemperatureReading():
     """ represents a single temperature probe reading from a moment in time """            
     def __init__(self, probe_id, temperature_C, timestamp=None):
-        self.probe_id = str(int(probe_id))
+        self.probe_id = str(probe_id)
         self.temperature_C = temperature_C
         self.temperature_F = temperature_C * 9.0 / 5.0 + 32.0
         if timestamp is None:
