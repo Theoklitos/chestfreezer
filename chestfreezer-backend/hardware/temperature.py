@@ -76,7 +76,8 @@ def get_temperature_readings():
     """ reads (immediately) the temperature readings from the probes returns a list with any temperature read """
     readings = []
     for probe_id in probe_ids:        
-        device_file = TEMPERATURE_PROBE_PATH + '28-00000' + probe_id + '/w1_slave'            
+        device_file = TEMPERATURE_PROBE_PATH + '28-00000' + probe_id + '/w1_slave'
+        print 'Reading from file: ' + device_file            
         lines = read_temp_raw(device_file)
         while lines[0].strip()[-3:] != 'YES':
             time.sleep(0.2)

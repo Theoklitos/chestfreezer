@@ -94,6 +94,7 @@ def startTemperatureRecordingThread():
         while True:        
             try:
                 readings = temperature.get_temperature_readings()
+                print 'Got ' + str(len(readings)) + ' new temp reading(s)'
                 if readings is not None:
                     mysql_adapter.store_temperatures(readings)                
             except Exception as e:
