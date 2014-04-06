@@ -65,7 +65,9 @@ def initialize_probes():
     """ looks for existing probes in the /sys folder and writes their ids to the database """        
     for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):
         probe_id = device_folder.split('28-', 1)[1]
+        print 'probe_id raw:' + probe_id        
         probe_id_pruned = str(probe_id[6:])
+        print 'probe_id pruned:' + probe_id_pruned
         probe_ids.append(probe_id_pruned)
             
     for probe_id in probe_ids:
