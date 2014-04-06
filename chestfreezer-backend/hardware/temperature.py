@@ -75,11 +75,9 @@ def initialize_probes():
 
 def get_temperature_readings():
     """ reads (immediately) the temperature readings from the probes returns a list with any temperature read """
-    readings = []
-    print str(len(probe_ids)) + ' probe ids'
+    readings = []    
     for probe_id in probe_ids:        
-        device_file = TEMPERATURE_PROBE_PATH + '28-00000' + probe_id + '/w1_slave'
-        print 'Reading from file: ' + device_file            
+        device_file = TEMPERATURE_PROBE_PATH + '28-00000' + probe_id + '/w1_slave'                    
         lines = read_temp_raw(device_file)
         while lines[0].strip()[-3:] != 'YES':
             time.sleep(0.2)
@@ -93,7 +91,7 @@ def get_temperature_readings():
             if probe_id == master_probe_id:
                 global last_master_reading
                 last_master_reading = reading
-        return readings        
+    return readings        
 
 def determine_master_probe():
     """ if there is no temperature probe set as the MASTER one, will set the first one """    
