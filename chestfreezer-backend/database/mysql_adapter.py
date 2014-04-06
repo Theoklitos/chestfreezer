@@ -74,7 +74,7 @@ def store_probe(probe, should_overwrite=True):
         if should_overwrite:
             update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + str(int(probe.master)) + "' WHERE probe_id='" + probe.probe_id + "'"
             cursor.execute(update_sql)
-            print 'Updated probe #' + probe.probe_id
+            #print 'Updated probe #' + probe.probe_id
         else:
             print 'Probe #' + probe.probe_id + ' is already registered.'
             return

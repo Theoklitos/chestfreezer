@@ -63,10 +63,11 @@ def read_temp_raw(device_file):
 
 def initialize_probes():
     """ looks for existing probes in the /sys folder and writes their ids to the database """        
-    for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):
+    for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):        
         probe_id = device_folder.split('28-', 1)[1]        
         probe_id_pruned = str(probe_id[5:])
-        probe_ids.append(probe_id_pruned)
+        global probe_ids
+        probe_ids.append(probe_id_pruned)        
             
     for probe_id in probe_ids:
         probe = Probe(probe_id)
@@ -75,6 +76,7 @@ def initialize_probes():
 def get_temperature_readings():
     """ reads (immediately) the temperature readings from the probes returns a list with any temperature read """
     readings = []
+    print str(len(probe_ids)) + ' probe ids'
     for probe_id in probe_ids:        
         device_file = TEMPERATURE_PROBE_PATH + '28-00000' + probe_id + '/w1_slave'
         print 'Reading from file: ' + device_file            
