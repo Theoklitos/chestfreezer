@@ -49,11 +49,11 @@ def connect():
     # check if tables exist, init the database
     probe_tables = cursor.execute("SHOW TABLES LIKE '" + PROBES_TABLE_NAME + "'");
     if probe_tables == 0:
-        cursor.execute("CREATE TABLE " + PROBES_TABLE_NAME + " (probe_id INT(12), name VARCHAR(100), master BOOLEAN, PRIMARY KEY(probe_id))");
+        cursor.execute("CREATE TABLE " + PROBES_TABLE_NAME + " (probe_id VARCHAR(12), name VARCHAR(100), master BOOLEAN, PRIMARY KEY(probe_id))");
         
     temperature_tables = cursor.execute("SHOW TABLES LIKE '" + TEMPERATURE_READINGS_TABLE_NAME + "'");
     if temperature_tables == 0:
-        sql_statement = "CREATE TABLE " + TEMPERATURE_READINGS_TABLE_NAME + " (probe_id INT(12) REFERENCES " + PROBES_TABLE_NAME + "(probe_id), temperature_C FLOAT(6,3), timestamp DATETIME)"        
+        sql_statement = "CREATE TABLE " + TEMPERATURE_READINGS_TABLE_NAME + " (probe_id VARCHAR(12) REFERENCES " + PROBES_TABLE_NAME + "(probe_id), temperature_C FLOAT(6,3), timestamp DATETIME)"        
         cursor.execute(sql_statement);
     
     instruction_tables = cursor.execute("SHOW TABLES LIKE '" + INSTRUCTIONS_TABLE_NAME + "'");
