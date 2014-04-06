@@ -23,7 +23,7 @@ class Probe():
     def __init__(self, probe_id, name=None, master=False):
         self.probe_id = probe_id
         if name is None:
-            self.name = str(int(probe_id))
+            self.name = str(probe_id[6:])
         else:
             self.name = name
         self.master = master
