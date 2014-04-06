@@ -23,7 +23,7 @@ class Probe():
     def __init__(self, probe_id, name=None, master=False):
         self.probe_id = probe_id
         if name is None:
-            self.name = str(probe_id[6:])
+            self.name = str(probe_id)
         else:
             self.name = name
         self.master = master
@@ -65,7 +65,8 @@ def initialize_probes():
     """ looks for existing probes in the /sys folder and writes their ids to the database """        
     for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):
         probe_id = device_folder.split('28-', 1)[1]
-        probe_ids.append(probe_id)
+        probe_id_pruned = str(probe_id[6:])
+        probe_ids.append(probe_id_pruned)
             
     for probe_id in probe_ids:
         probe = Probe(probe_id)

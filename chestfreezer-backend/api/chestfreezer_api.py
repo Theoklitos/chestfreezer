@@ -42,6 +42,8 @@ class session:
     
 class temperature:
     """ temperature controller """
+    def OPTIONS(self):
+        web.header('Access-Control-Allow-Origin', '*')
     def GET(self):       
         _auth_check()
         variables = web.input()        

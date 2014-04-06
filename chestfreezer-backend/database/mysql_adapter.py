@@ -64,20 +64,19 @@ def connect():
         
 def store_probe(probe, should_overwrite=True):
     """ stores (with the option to overwrite) a new probe """    
-    probe_id_pruned = str(int(probe.probe_id))
-    cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + probe_id_pruned + "'")
+    cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + probe.probe_id + "'")
     results = cursor.fetchall()
-    sql_statement = "INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + probe_id_pruned + "','" + probe.name + "', FALSE)"
+    sql_statement = "INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + probe.probe_id + "','" + probe.name + "', FALSE)"
     if len(results) == 0:
         cursor.execute(sql_statement)
-        print 'Registered new probe #' + probe_id_pruned
+        print 'Registered new probe #' + probe.probe_id
     elif len(results) == 1:
         if should_overwrite:
-            update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + str(int(probe.master)) + "' WHERE probe_id='" + probe_id_pruned + "'"
+            update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + str(int(probe.master)) + "' WHERE probe_id='" + probe.probe_id + "'"
             cursor.execute(update_sql)
-            print 'Updated probe #' + probe_id_pruned
+            print 'Updated probe #' + probe.probe_id
         else:
-            print 'Probe #' + probe_id_pruned + ' is already registered.'
+            print 'Probe #' + probe.probe_id + ' is already registered.'
             return
     db.commit()  
 
