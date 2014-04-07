@@ -38,6 +38,12 @@ def timestamp_to_datetime(timestamp):
     """ converts a unix timestamp to a datetime object """
     return datetime.datetime.fromtimestamp(timestamp)
 
+def append_to_file(filename, message):
+    """ appends the given files to a file """
+    filestream = open(filename, 'a')
+    filestream.write(message + '\n')
+    filestream.close() 
+    
 def boolean_to_readable_string(boolean_value):
     """ for a 1 returns 'False' and for a 0 returns 'True' """
     result = 'False'

@@ -31,6 +31,7 @@ class TestChestfreezerAPI(unittest.TestCase):
         time.sleep(1)                
         chestfreezer_api.configuration.db_type = overwriten_db_type
         chestfreezer_api.configuration.set_should_send_emails(False)
+        chestfreezer_api.configuration.set_is_security_enabled(False)        
         db_adapter.connect()        
         temperature_probes.initialize_probes()        
         self.http = httplib2.Http(".cache")  
@@ -45,18 +46,17 @@ class TestChestfreezerAPI(unittest.TestCase):
         response, content = self._do_GET_with_credentials('http://localhost:8080/chestfreezer/api/temperature')         
         assert(response.status == 200)        
         data = json.loads(content)
-        assert(len(data) == 30)      
+        assert(len(data) == 30)
     
     def test_get_temperatures_for_timestamps(self):
         """ asks for temperatures within time bounds """
         test_data.insert_test_temperatures(20)
-        startMillis = str(int(time.time()) - 100000) #one minute ago        
-        endMillis = str(int(time.time()))                
+        startMillis = str(int(time.time()) - 70) #a little over a  minute ago        
+        endMillis = str(int(time.time()))
         response, content = self._do_GET_with_credentials('http://localhost:8080/chestfreezer/api/temperature?start=' + startMillis + '&end=' + endMillis)        
         assert(response.status == 200)                
-        data = json.loads(content)    
-        print len(data)        
-        assert(len(data) == 30)
+        data = json.loads(content)
+        assert(len(data) == 6)
         
     def tearDown(self):
         # bad way of terminating the thread

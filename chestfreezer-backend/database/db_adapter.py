@@ -86,7 +86,7 @@ def connect():
         print 'done.'
     initialize_tables()
             
-def store_probe(probe, should_overwrite=True):
+def store_probe(probe, should_overwrite=True):        
     """ stores (with the option to overwrite) a new probe """    
     cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + probe.probe_id + "'")
     results = cursor.fetchall()    
@@ -96,9 +96,9 @@ def store_probe(probe, should_overwrite=True):
         print 'Registered new probe #' + probe.probe_id
     elif len(results) == 1:
         if should_overwrite:
-            update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + str(int(probe.master)) + "' WHERE probe_id='" + probe.probe_id + "'"
+            update_sql = "UPDATE " + PROBES_TABLE_NAME + " SET name='" + probe.name + "',master='" + str(int(not probe.master)) + "' WHERE probe_id='" + probe.probe_id + "'"            
             cursor.execute(update_sql)
-            # print 'Updated probe #' + probe.probe_id
+            #print 'Updated probe #' + probe.probe_id
         else:
             print 'Probe #' + probe.probe_id + ' is already registered.'
             return
@@ -149,21 +149,6 @@ def get_instructions_for_time(timestamp):
         print result        
     return found_instructions
 
-def get_master_probe():
-    """ returns the probe set to master """
-    for probe in get_all_probes():
-        if probe.master:
-            return probe
-
-def set_probe_name(probe_id, new_name):
-    """ changes the probe's name """
-    for probe in get_all_probes():
-        if probe.probe_id == probe_id:
-            probe.name = new_name
-            store_probe(probe)
-            return
-    raise Exception('Could not find probe #' + probe_id + ', no update done.')    
-
 def get_probe_by_id(probe_id):
     """ returns the given Probe instance for the id, if any """
     for probe in get_all_probes():
@@ -177,8 +162,8 @@ def get_all_probes():
     all_results = cursor.fetchall()
     for result in all_results:
         probe_id = result[0]
-        probe_name = result[1]
-        master = result[2]
+        probe_name = result[1]                
+        master = result[2] == 0        
         probe = hardware.temperature_probes.Probe(probe_id, probe_name, master)
         all_probes.append(probe)
     return all_probes      

@@ -9,6 +9,7 @@ Contains properties that are read from a config file. Provides sensible defaults
 import os
 import util.SimpleConfigParser as SimpleConfigParser
 from ConfigParser import NoOptionError
+import re
 
 CONFIGURATION_FILE_NAME = 'configuration'
 
@@ -32,7 +33,9 @@ DEFAULT_PORT = 80
 DEFAULT_EMAILS_TO_NOTIFY = ''
 DEFAULT_EMAILS_TO_WARN = ''
 
+_should_log_security = True
 _should_send_emails = True
+_is_security_enabled = True
 
 def does_config_file_exist():
     return config_file is not None
@@ -54,6 +57,15 @@ if does_config_file_exist():
 else:
     print 'No configuration file found, will use default configuration values.'
 
+def _get_array_option_with_default(option_name, default_value):
+    """ returns a list (trimmed) from a comma-separated value """
+    pattern = re.compile('\s*,\s*')    
+    result =  pattern.split(_get_option_with_default(option_name, default_value))
+    if (len(result) == 1) & (not result[0].strip()):
+        return []     
+    else:
+        return result
+    
 def _get_option_with_default(option_name, default_value):
     """ if the option exists, returns its value. If it is empty or does not exist, returns the default value"""
     try:
@@ -135,11 +147,11 @@ def port():
 
 def emails_to_warn():
     """ who should get warning about errors messages in the chestfreezer? """
-    return _get_option_with_default('emails_to_warn', DEFAULT_EMAILS_TO_WARN).split(',')    
+    return _get_array_option_with_default('emails_to_warn', DEFAULT_EMAILS_TO_WARN) 
 
 def emails_to_notify():
     """ who should get notifications from the chestfreezer? """
-    return _get_option_with_default('emails_to_notify', DEFAULT_EMAILS_TO_NOTIFY).split(',')
+    return _get_array_option_with_default('emails_to_notify', DEFAULT_EMAILS_TO_NOTIFY)
 
 def set_should_send_emails(should):
     """ sets if the email should be send or not """
@@ -149,3 +161,20 @@ def set_should_send_emails(should):
 def should_send_emails():
     """ is the emailer enabled? this can be set only at runtime """
     return _should_send_emails
+
+def set_is_security_enabled(should):
+    """ sets whether the web interface (basic auth) security should be enabled or not """
+    global _is_security_enabled
+    _is_security_enabled = should
+    
+def is_security_enabled():
+    """ should the api check basic auth credentials """
+    return _is_security_enabled
+
+def is_ip_allowed(ip):
+    """ returns true if the given IP is allowed to access the api """
+    allowed_ips =_get_array_option_with_default('allowed_ips', '')    
+    return (not allowed_ips) | (len(allowed_ips)== 0) | (ip in allowed_ips)    
+         
+
+

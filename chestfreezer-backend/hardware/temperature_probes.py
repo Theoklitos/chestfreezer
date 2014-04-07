@@ -33,7 +33,7 @@ class Probe():
     
     def __str__(self):
         prefix = ', secondary probe'        
-        if self.master is True:
+        if self.master:
             prefix = ', master probe'
         return 'Probe #' + self.probe_id + ', name: ' + self.name + prefix 
 
@@ -113,15 +113,14 @@ def determine_master_probe():
     for probe in database.db_adapter.get_all_probes():
         if first_result is None:
             first_result = probe
-        if probe.master:
+        if probe.master == 1:
             is_anyone_master = True
             break    
     if not is_anyone_master:
-        first_result.master = True
+        first_result.master = True 
         database.db_adapter.store_probe(first_result)
         master_probe_id = first_result.probe_id
         print 'Auto-determined probe #' + str(first_result.probe_id) + ' to be the master one.' 
-
 
 def set_probe_as_not_master(probe_id):
     """ removes the master status from the given probe, if any """
@@ -146,6 +145,21 @@ def set_probe_as_master(probe_id):
         determine_master_probe()                
         raise Exception('Could not find probe #' + probe_id + ', no update done.')
 
+def get_master_probe():
+    """ returns the probe set to master """
+    for probe in database.db_adapter.get_all_probes():
+        if probe.master:
+            return probe
+
+def set_probe_name(probe_id, new_name):
+    """ changes the probe's name """
+    for probe in  database.db_adapter.get_all_probes():
+        if probe.probe_id == probe_id:
+            probe.name = new_name
+            database.db_adapter.store_probe(probe)
+            return
+    raise Exception('Could not find probe #' + probe_id + ', no update done.')
+
 def start_temperature_recording_thread():
     """ recods all the temp readings from the probes every X seconds """
     def record_temperatures():        
@@ -160,3 +174,4 @@ def start_temperature_recording_thread():
     temperature_recording_thread = Thread(target=record_temperatures, args=())
     temperature_recording_thread.daemon = True
     temperature_recording_thread.start()
+

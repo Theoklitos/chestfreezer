@@ -12,7 +12,7 @@ from mock import Mock
 def overwriten_db_type():
     return 'memory'
 
-class TestChestfreezerStartup(unittest.TestCase):    
+class TestDatabaseAdapter(unittest.TestCase):    
     
     def setUp(self):
         chestfreezer_start.configuration.db_type = overwriten_db_type
