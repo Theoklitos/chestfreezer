@@ -5,208 +5,70 @@ A simple rest(?) api to be used to access the functionality
 
 @author: theoklitos
 '''
-import web
-import time
-from database import mysql_adapter
+import bottle
+from bottle import static_file, request, response, abort
 import sys
-from util import json_parser, configuration
-from control import brew_controller
-from hardware import temperature
+import os
+from util import configuration, json_parser, misc_utils
+from database import db_adapter
+import time
 
-def _is_authenticated():
-    """ checks if the user is authenticated, by his sessions """
-    # return session.login == 1 TODO
-    return True
-    
-def _auth_check():
-    """ checks if user is authenticated and throws exception if he isn't """
-    try:
-        if not _is_authenticated():
-            raise web.unauthorized()
-    except:
-        raise web.unauthorized()
-    
-class session:
-    """ security controller """
-    def POST(self):
-        variables = web.input()
-        if (variables.get('username') == configuration.web_user()) & (variables.get('password') == configuration.web_pwd()):
-            user_session.login = 1
-            print 'Logged in.'
-            return web.ok()           
-        else:
-            user_session.login = 0
-            return web.unauthorized()          
-    def DELETE(self):
-        user_session.login = 0        
-    
-class temperature:
-    """ temperature controller """
-    def OPTIONS(self):
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Access-Control-Allow-Methods', '*')        
-    def GET(self):
-        web.header('Access-Control-Allow-Origin', '*')
-        web.header('Access-Control-Allow-Methods', '*')
-        _auth_check()
-        variables = web.input()        
-        if len(variables) == 0:        
-            all_readings = mysql_adapter.get_readings(1, int(time.time()))
-            return json_parser.get_temperature_reading_array_as_json(all_readings)
-        elif len(variables) == 1:
-            if ('master' in variables) | ('Master' in variables) | ('MASTER' in variables):                                
-                return json_parser.get_temperature_reading_as_json(temperature.last_master_reading)            
-        elif len(variables) == 2:
-            try:
-                from_timestamp = float(variables.get('from'))
-                to_timestamp = float(variables.get('to'))
-                all_readings = mysql_adapter.get_readings(from_timestamp, to_timestamp)
-                return json_parser.get_temperature_reading_array_as_json(all_readings)
-            except Exception as e:
-                print 'Error calling temperature endpoint: ' + str(e)
-                raise web.badrequest()            
-        else:
-            raise web.badrequest()        
-    def POST(self):
-        _auth_check()
-        pass
+WEB_INTERFACE_ROOT = "/chestfreezer/"
+API_ROOT = WEB_INTERFACE_ROOT + "api"
 
-class devices:
-    """ plural temperature controller """
-    def GET(self):
-        _auth_check()
-        return json_parser.get_both_devices_json()        
-                    
-class device:
-    """ single temperature controller """
-    def _is_heater(self, name):
-        return name in ['heater', 'Heater', 'HEATER']
+FRONTEND_JAVASCRIPT_FILENAME = "graphs.html"
+FRONTEND_JAVASCRIPT_FILE_PATH = os.getcwd() + "/../../chestfreezer-frontend/"
+
+def access_control(user, password):
+    """ very simple basic auth """
+    if (user == configuration.web_user()) & (password == configuration.web_pwd()):    
+        return True
+    else:
+        return False
+
+def _abort_and_log(error_code, message, exception):
+    """ logs an error message and returns the given erroneous status code """
+    print message + " - exception: " + str(exception)        
+    abort(error_code, message)
         
-    def _is_freezer(self, name):
-        return name in name in ['freezer', 'Freezer', 'FREEZER']
+@bottle.get(API_ROOT + '/temperature')
+def get_temperatures():
+    start_timestamp = 1
+    end_timestamp = int(time.time())    
+    if request.query_string:    
+        start_timestamp = request.query.start
+        end_timestamp = request.query.end
+        if (not start_timestamp) | (not end_timestamp):
+            abort(400, "Provide both 'start' and 'end' timestamp query parameters")
+    try:                        
+        print 'Asked for temperature readings from ' + misc_utils.timestamp_to_datetime(float(start_timestamp)).strftime("%c") + ' to ' + misc_utils.timestamp_to_datetime(float(end_timestamp)).strftime("%c")
+        all_readings = db_adapter.get_temperature_readings(int(start_timestamp), int(end_timestamp))
+        response.content_type = 'application/json;'                
+        return json_parser.get_temperature_reading_array_as_json(all_readings)
+    except Exception as e:
+        _abort_and_log(400, "Malformed timestamp parameter(s)", e)
     
-    def GET(self, name):
-        _auth_check()
-        if self._is_heater(name):
-            return json_parser.get_heater_device_json()
-        elif self._is_freezer(name):
-            return json_parser.get_freezer_device_json()
-        else:
-            raise web.badrequest()
-    def POST(self, name):
-        _auth_check()
-        variables = web.input()        
-        if len(variables) != 1:
-            try:
-                if name is None:
-                    raise web.badrequest()                
-                raw_state = variables.get('state')
-                print 'raw state: ' + raw_state
-                boolean_state = None
-                remove_override = False
-                if raw_state in ['on', 'ON', 'On', 'True', 'true', 'TRUE']:
-                    boolean_state = True
-                if raw_state in ['off', 'OFF', 'Of', 'False', 'false', 'FALSE']:
-                    boolean_state = False
-                if raw_state in ['remove', 'REMOVE', 'Remove']:
-                    remove_override = True
-                else:
-                    raise web.badrequest()                
-                if self._is_heater(name):
-                    if remove_override:
-                        brew_controller.remove_heater_override()
-                    else:
-                        brew_controller.set_heater_override(boolean_state)
-                elif self._is_freezer(name):
-                    if remove_override:
-                        brew_controller.remove_freezer_override()
-                    else:
-                        brew_controller.set_freezer_override(boolean_state)
-                else:
-                    raise web.badrequest()
-            except Exception as e:
-                print 'Error calling device endpoint: ' + str(e)
-                raise web.badrequest()
-        else:        
-            raise web.badrequest()
+@bottle.get(WEB_INTERFACE_ROOT + "/")
+def js_spa():
+    return static_files(FRONTEND_JAVASCRIPT_FILENAME)        
 
-class probe:
-    """ controller for a single temperature probe """
-    def GET(self, probe_id):
-        _auth_check()
-        try:
-            probe = mysql_adapter.get_probe_by_id(probe_id)
-            return json_parser.get_probe_as_json(probe)
-        except Exception as e:
-            raise web.badrequest(str(e))
-    def POST(self, probe_id):
-        _auth_check()
-        if probe_id is None:
-            raise web.badrequest()
-        else:
-            try:
-                variables = web.input()
-                if 'name' in variables:                    
-                    pass
-                elif 'master' in variables:
-                    if variables.get('master') in ['True', 'true', 'TRUE']:                        
-                        temperature.set_probe_as_master(probe_id)
-                    elif variables.get('master') in ['False', 'false', 'FALSE']:
-                        temperature.set_probe_as_not_master(probe_id)
-                    else:
-                        raise web.badrequest()
-            except Exception as e:
-                print 'Could not rename probe:\n' + str(e)
-                raise web.badrequest()
-            
-class probes:
-    """ controller for all temperature probes """
-    def GET(self):
-        _auth_check()        
-        probe_list = mysql_adapter.get_all_probes()
-        return json_parser.get_probe_array_as_json(probe_list)
-
-class instructions:
-    """ temperature instructions controller """
-    def GET(self):
-        _auth_check()
-        pass
-    def POST(self):
-        _auth_check()
-        pass
-    def DELETE(self):
-        _auth_check()
-        pass
-
-urls = (
-        '/chestfreezer_api/sessions', 'session',
-        '/chestfreezer_api/temperature', 'temperature',
-        
-        '/chestfreezer_api/devices', 'devices',
-        '/chestfreezer_api/device/(.+)', 'device',
-        
-        '/chestfreezer_api/probes', 'probes',
-        '/chestfreezer_api/probe/(.+)', 'probe',
-        
-        '/chestfreezer_api/instructions', 'instructions'     
-)
+@bottle.get('/<path:path>')
+def static_files(path): 
+    if not path:
+        abort(404)
+    else:       
+        return static_file(path, root=FRONTEND_JAVASCRIPT_FILE_PATH)    
     
-app = web.application(urls, globals())
-user_session = web.session.Session(app, web.session.DiskStore('sessions'))
-web.config.debug = False
-    
-def run():
-    """ call to web.py run(), starts the web stuff """               
+def run_on_different_thread():
+    """ TODO """
     try:    
-        app.run()
+        bottle.run(host='localhost', port=configuration.port())    
     except KeyboardInterrupt:
         print 'Interrupted, shutting down...'
-    #    # stop threads, etc?
+        # stop threads, etc?
         import hardware.chestfreezer_gpio as gpio
         gpio.cleanup()
         sys.exit("Goodbye!")
-    
-    
-    
-    
+    except Exception as e:
+        print 'exception: ' + str(e)
     

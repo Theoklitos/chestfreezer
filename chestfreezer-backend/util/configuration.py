@@ -24,13 +24,20 @@ DEFAULT_INSTRUCTION_CHECK_INTERVAL_SECONDS = 60
 instruction_interval_overwrite = None
 DEFAULT_WEB_USER = 'brewmaster'
 DEFAULT_WEB_PASSWORD = 'h3f3w3iz3n'
+DATABASE_IN_DISK_CONFIG_VALUE = 'disk'
+DATABASE_IN_MEMORY_CONFIG_VALUE = 'memory' 
+DEFAULT_DB_TYPE = 'disk'
+DEFAULT_PORT = 80
+
+DEFAULT_EMAILS_TO_NOTIFY = ''
+DEFAULT_EMAILS_TO_WARN = ''
 
 def does_config_file_exist():
     return config_file is not None
 
 def find_config_file(name):    
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    for root, dirs, files in os.walk(path): # @UnusedVariable
+    for root, dirs, files in os.walk(path):  # @UnusedVariable
         if name in files:
             return os.path.join(root, name)
 
@@ -54,7 +61,7 @@ def _get_option_with_default(option_name, default_value):
         else:
             return option_value
     except NoOptionError:
-        return default_value
+        return default_value    
 
 def set_store_temperature_interval_seconds(seconds):
     """ sets every how many seconds should the temperature readings be stored in the DB """
@@ -67,6 +74,14 @@ def store_temperature_interval_seconds():
         return float(_get_option_with_default('temperature_store_interval_time_seconds', DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS))
     else:
         return float(store_interval_overwrite)
+
+def db_type():
+    """ returns the database type: disk or memory """
+    option = _get_option_with_default('db_type', DEFAULT_DB_TYPE).lower()
+    if option not in [DATABASE_IN_DISK_CONFIG_VALUE, DATABASE_IN_MEMORY_CONFIG_VALUE]:
+        raise Exception('Database type "' + option + '" was not understood. Type must be set to either "memory" or "disk"(default).')
+    else:
+        return option
 
 def web_user():
     """ returns the username for authentication in the web interface """
@@ -112,3 +127,14 @@ def set_instruction_interval_seconds(seconds):
     global instruction_interval_overwrite
     instruction_interval_overwrite = seconds
 
+def port():
+    """ which port should the web interface run on """
+    return int(_get_option_with_default('port', DEFAULT_PORT))
+
+def emails_to_warn():
+    """ who should get warning about errors messages in the chestfreezer? """
+    return _get_option_with_default('emails_to_warn', DEFAULT_EMAILS_TO_WARN).split(',')    
+
+def emails_to_notify():
+    """ who should get notifications from the chestfreezer? """
+    return _get_option_with_default('emails_to_notify', DEFAULT_EMAILS_TO_NOTIFY).split(',')

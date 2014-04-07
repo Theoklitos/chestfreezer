@@ -37,3 +37,10 @@ def get_single_char():
 def timestamp_to_datetime(timestamp):
     """ converts a unix timestamp to a datetime object """
     return datetime.datetime.fromtimestamp(timestamp)
+
+def boolean_to_readable_string(boolean_value):
+    """ for a 1 returns 'False' and for a 0 returns 'True' """
+    result = 'False'
+    if boolean_value:
+        result = 'True'
+    return result

@@ -9,8 +9,10 @@ Initializes and takes readings from the temperature probes, also manages the nam
 import glob
 import subprocess
 import time
-from database import mysql_adapter
+from database import db_adapter
 from util import misc_utils
+from hardware import chestfreezer_gpio
+from tests import test_data
 
 TEMPERATURE_PROBE_PATH = '/sys/bus/w1/devices/' 
 probe_ids = []
@@ -62,42 +64,52 @@ def read_temp_raw(device_file):
     return lines
 
 def initialize_probes():
-    """ looks for existing probes in the /sys folder and writes their ids to the database """        
-    for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):        
-        probe_id = device_folder.split('28-', 1)[1]        
-        probe_id_pruned = str(probe_id[5:])
-        global probe_ids
-        probe_ids.append(probe_id_pruned)        
-            
+    """ looks for existing probes in the /sys folder and writes their ids to the database """
+    global probe_ids     
+    if chestfreezer_gpio.using_real_pi:   
+        for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):        
+            probe_id = device_folder.split('28-', 1)[1]        
+            probe_id_pruned = str(probe_id[5:])            
+            probe_ids.append(probe_id_pruned)
+    else:  
+        probe_ids.append(test_data.PROBE1_ID)
+        probe_ids.append(test_data.PROBE2_ID)
+        probe_ids.append(test_data.PROBE3_ID)
+    
     for probe_id in probe_ids:
         probe = Probe(probe_id)
-        mysql_adapter.store_probe(probe, False)
+        db_adapter.store_probe(probe, False)
 
 def get_temperature_readings():
     """ reads (immediately) the temperature readings from the probes returns a list with any temperature read """
-    readings = []    
-    for probe_id in probe_ids:        
-        device_file = TEMPERATURE_PROBE_PATH + '28-00000' + probe_id + '/w1_slave'                    
-        lines = read_temp_raw(device_file)
-        while lines[0].strip()[-3:] != 'YES':
-            time.sleep(0.2)
+    readings = []
+    if chestfreezer_gpio.using_real_pi:
+        for probe_id in probe_ids:        
+            device_file = TEMPERATURE_PROBE_PATH + '28-00000' + probe_id + '/w1_slave'                    
             lines = read_temp_raw(device_file)
-        equals_pos = lines[1].find('t=')
-        if equals_pos != -1:
-            temp_string = lines[1][equals_pos + 2:]
-            temperature_C = float(temp_string) / 1000.0            
-            reading = TemperatureReading(probe_id, temperature_C)
+            while lines[0].strip()[-3:] != 'YES':
+                time.sleep(0.2)
+                lines = read_temp_raw(device_file)
+            equals_pos = lines[1].find('t=')
+            if equals_pos != -1:
+                temp_string = lines[1][equals_pos + 2:]
+                temperature_C = float(temp_string) / 1000.0            
+                reading = TemperatureReading(probe_id, temperature_C)
+                readings.append(reading)
+                if probe_id == master_probe_id:
+                    global last_master_reading
+                    last_master_reading = reading
+    else:
+        for probe_id in probe_ids:                        
+            reading = test_data.get_temperature_for_probe(probe_id)
             readings.append(reading)
-            if probe_id == master_probe_id:
-                global last_master_reading
-                last_master_reading = reading
     return readings        
 
 def determine_master_probe():
     """ if there is no temperature probe set as the MASTER one, will set the first one """    
     first_result = None
     is_anyone_master = False
-    for probe in mysql_adapter.get_all_probes():
+    for probe in db_adapter.get_all_probes():
         if first_result is None:
             first_result = probe
         if probe.master:
@@ -105,30 +117,30 @@ def determine_master_probe():
             break    
     if not is_anyone_master:
         first_result.master = True
-        mysql_adapter.store_probe(first_result)
+        db_adapter.store_probe(first_result)
         master_probe_id = first_result.probe_id
         print 'Auto-determined probe #' + str(first_result.probe_id) + ' to be the master one.' 
 
 
 def set_probe_as_not_master(probe_id):
     """ removes the master status from the given probe, if any """
-    probe = mysql_adapter.get_probe_by_id(probe_id)
+    probe = db_adapter.get_probe_by_id(probe_id)
     if probe.master:        
         probe.master = False
         master_probe_id = None
-        mysql_adapter.store_probe(probe)    
+        db_adapter.store_probe(probe)    
     
 def set_probe_as_master(probe_id):
     """ sets the given probe to Master, and all the other ones to not-master """
     found = False
-    for probe in mysql_adapter.get_all_probes():
+    for probe in db_adapter.get_all_probes():
         if probe.probe_id == probe_id:
             probe.master = True
-            mysql_adapter.store_probe(probe)
+            db_adapter.store_probe(probe)
             found = True
         else:
             probe.master = False
-            mysql_adapter.store_probe(probe)            
+            db_adapter.store_probe(probe)            
     if not found:
         determine_master_probe()                
         raise Exception('Could not find probe #' + probe_id + ', no update done.')

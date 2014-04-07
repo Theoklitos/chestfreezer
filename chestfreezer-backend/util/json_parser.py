@@ -5,7 +5,7 @@ Simple json marshalling utils for the classes in this project
 
 @author: theoklitos
 '''
-from control import brew_controller
+from control import brew_logic
 
 
 def _pretty_state_identifier(state):
@@ -31,11 +31,11 @@ def get_temperature_reading_as_json(temperature_reading):
 
 def get_heater_device_json():
     """ returns information about the heater in json """
-    return '{\n    "state" : "' + _pretty_state_identifier(brew_controller.heater_state) + '",\n    "overridden" : "' + str(brew_controller.heater_override).lower() + '"\n  }'
+    return '{\n    "state" : "' + _pretty_state_identifier(brew_logic.heater_state) + '",\n    "overridden" : "' + str(brew_logic.heater_override).lower() + '"\n  }'
 
 def get_freezer_device_json():
     """ returns information about the freezer in json """
-    return '{\n    "state" : "' + _pretty_state_identifier(brew_controller.freezer_state) + '",\n    "overridden" : "' + str(brew_controller.freezer_override).lower() + '"\n  }'
+    return '{\n    "state" : "' + _pretty_state_identifier(brew_logic.freezer_state) + '",\n    "overridden" : "' + str(brew_logic.freezer_override).lower() + '"\n  }'
 
 def get_both_devices_json():
     """ returns information about both the freezer and the heater as a json object """

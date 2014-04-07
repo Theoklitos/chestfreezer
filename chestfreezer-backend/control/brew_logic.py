@@ -1,11 +1,11 @@
 '''
 Created on Apr 3, 2014
 
-Controls the temperature based on readings and user input. Sort of the main logic class.
+Controls the temperature based on readings and user instructions. Sort of like the main logic class.
 
 @author: theoklitos
 '''
-from database import mysql_adapter
+from database import db_adapter
 from hardware import chestfreezer_gpio
 from util import configuration, misc_utils
 import time
@@ -38,7 +38,8 @@ def start_instruction_thread():
     def follow_instructions():        
         while True:        
             try:
-                print 'Updating instructions...'
+                pass
+                #print 'Updating instructions...'
             except Exception as e:
                 print 'Error while looking at instructions:\n' + str(e)
             time.sleep(configuration.instruction_interval_seconds())                    
@@ -56,7 +57,7 @@ def get_current_instruction():
     if temperature_overwrite is not None:
         set_temperature(temperature_overwrite)
     else :
-        result = mysql_adapter.get_instructions_for_time()
+        result = db_adapter.get_instructions_for_time()
         if len(result) > 1:
             raise
         pass
@@ -105,4 +106,9 @@ def set_freezer_override(should_activate):
 
 def set_temperature(temperature_C):
     """ uses the GPIO to turn devices on/off so as to set the temperature """
-    
+    pass
+
+def start_temperature_control_thread():
+    """ start the thread that monitors and control the devices in order to control the temperature """
+
+
