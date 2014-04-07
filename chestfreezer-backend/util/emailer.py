@@ -12,6 +12,8 @@ GMAIL_USERNAME = 'chestfriseur@gmail.com'
 GMAIL_PASSWORD = 'h3f3w3iz3n'
 
 def _send_email(subject, body, to):
+    if not configuration.should_send_emails():        
+        return
     """ connects to gmail's smtp server and sends the email """
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.ehlo()

@@ -32,10 +32,10 @@ from hardware import chestfreezer_gpio
 from hardware import temperature_probes
 from database import db_adapter
 import time
-from threading import Thread
 import termios
 from tests import test_data
 import control.brew_logic as logic
+import api.chestfreezer_api as api
 
 def do_sound_check():
     """ asks the user if he heard 4 clicks, returns the boolean result"""
@@ -104,32 +104,30 @@ def check_and_init_database():
             
 def start_threads():
     """ starts a thread that stored the temperature readings every second, and the other 2 temperature controlling threads """
-    def record_temperatures():        
-        while True:        
-            try:
-                readings = temperature_probes.get_temperature_readings()               
-                if readings is not None:
-                    db_adapter.store_temperatures(readings)           
-            except Exception as e:
-                print 'Could not log temperature. Error:\n' + str(e)
-            time.sleep(configuration.store_temperature_interval_seconds())    
-    temperature_recording_thread = Thread(target=record_temperatures, args=())
-    temperature_recording_thread.daemon = True
-    temperature_recording_thread.start()
-    
-    # also the logic
+    temperature_probes.start_temperature_recording_thread()
     logic.start_instruction_thread()
     logic.start_temperature_control_thread()
 
 def start_web_interface():        
-    """ starts the bottle.py server """
-    import api.chestfreezer_api as api        
+    """ starts the bottle.py server """            
     print 'Starting web interface...\n'        
-    api.run_on_different_thread()
+    api.start()
         
 if __name__ == "__main__":
     check_and_init_database()     
     check_hardware()
     check_internet_connectivity()    
     start_threads()
-    start_web_interface()    
+    start_web_interface()
+    
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        print '\nInterrupted, shutting down...'
+        # stop threads, cleanup, etc? TODO
+        chestfreezer_gpio.cleanup()
+        sys.exit("Goodbye!")
+    except Exception as e:
+        print 'Exception: ' + str(e)
+        

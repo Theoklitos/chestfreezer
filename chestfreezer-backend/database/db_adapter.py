@@ -11,6 +11,7 @@ import datetime
 import hardware.temperature_probes
 import sqlite3
 import sys
+import time
 
 cursor = None
 db = None
@@ -109,32 +110,33 @@ def store_temperatures(temperature_readings):
         probe_id = temperature_reading.probe_id
         temperature_C = temperature_reading.temperature_C
         timestamp = datetime.datetime.fromtimestamp(temperature_reading.timestamp).strftime('%Y-%m-%d %H:%M:%S')
-        # print 'Storing temperature reading: ' + str(temperature_reading)
         sql_statement = "INSERT INTO " + TEMPERATURE_READINGS_TABLE_NAME + " VALUES ('" + probe_id + "','" + str(temperature_C) + "','" + timestamp + "')"            
         cursor.execute(sql_statement)
     db.commit()    
 
-def get_temperature_readings(from_timestamp, to_timestamp):
+def get_temperature_readings(from_timestamp=1, to_timestamp=time.time()):
     """ returns all the temperature readings from/upto the given timestamps """    
     found_temperature_readings = []
     sql_statement = None
-    if _is_memory_db():
-        print str(from_timestamp) + " to " + str(to_timestamp)        
-        sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME + " WHERE timestamp BETWEEN strftime('%Y-%m-%d %H:%M:%S'," + str(from_timestamp) + ") and strftime('%Y-%m-%d %H:%M:%S'," + str(to_timestamp) + ")"
+    if _is_memory_db():                
+        # i can't seem to compare dates in sqlite3 directly
+        sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME
     else:
         sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME + " WHERE timestamp BETWEEN from_unixtime(" + str(from_timestamp) + ") and from_unixtime(" + str(to_timestamp) + ")"
     cursor.execute(sql_statement);
-    all_results = cursor.fetchall()
+    all_results = cursor.fetchall()    
     for result in all_results:
         probe_id = result[0]
         temperature_C = result[1]           
         try:             
             timestamp = result[2].strftime("%s")
         except:
-            timestamp = datetime.datetime.strptime(result[2], '%Y-%m-%d %H:%M:%S').strftime("%s")
+            timestamp = int(datetime.datetime.strptime(result[2], '%Y-%m-%d %H:%M:%S').strftime("%s"))
         temperature_reading = hardware.temperature_probes.TemperatureReading(probe_id, temperature_C, timestamp)
-        found_temperature_readings.append(temperature_reading)                        
-        
+        # dates must be compared "manually" if we are using sqlite3        
+        should_add = (not _is_memory_db()) | (_is_memory_db() & (timestamp >= int(from_timestamp)) & (timestamp <= int(to_timestamp)))
+        if should_add:
+            found_temperature_readings.append(temperature_reading)                
     return found_temperature_readings
 
 def get_instructions_for_time(timestamp):

@@ -5,45 +5,35 @@ Utilities and methods to control rapsbery's GPIO pins
 
 @author: theoklitos
 '''
-from util import misc_utils
 import sys
 import time
 
 using_real_pi = True
 try:            
-    import RPi.GPIO as GPIO
+    import RPi.GPIO as GPIO  # @UnusedImport
 except RuntimeError:
     print 'Cannot access GPIO pins. You are probably not using a raspberry-pi, therefore dummy hardware mode will be enabled.'    
-    using_real_pi = False   
+    using_real_pi = False  
+import tests.dummy_GPIO as GPIO
 
-if using_real_pi:
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BOARD)
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)
 
 def output_pin(pin_number, state):
-    """ will set the (boolean) state of the given pin_number # in GPIO.BOARD mode. Throws ValueError """
-    if using_real_pi:
-        GPIO.setup(int(pin_number), GPIO.OUT)    
-        GPIO.output(int(pin_number), state)
-    else:
-        print 'Dummy Mode: Setting pin #' + pin_number + ' to state: ' + misc_utils.boolean_to_readable_string(state)
+    """ will set the (boolean) state of the given pin_number # in GPIO.BOARD mode. Throws ValueError """    
+    GPIO.setup(int(pin_number), GPIO.OUT)    
+    GPIO.output(int(pin_number), state)    
     
 def output_pin_for_time(pin_number, state, seconds):
     """ will set the (boolean) state of the given pin_number # in GPIO.BOARD mode. 
-    After given seconds have passed, will flip the state around. Throws ValueError. """
-    if using_real_pi:
-        output_pin(pin_number, state)
-        time.sleep(seconds)
-        GPIO.output(int(pin_number), not state)
-    else:
-        print 'Dummy Mode: Setting pin #' + pin_number + ' to state: ' + misc_utils.boolean_to_readable_string(state) + ' for ' + str(seconds) + ' second(s).'           
+    After given seconds have passed, will flip the state around. Throws ValueError. """   
+    output_pin(pin_number, state)
+    time.sleep(seconds)
+    GPIO.output(int(pin_number), not state)               
 
 def cleanup():
-    """ will call the RPi.GPIO library to cleanup all the hardware pin_number states """
-    if using_real_pi:
-        GPIO.cleanup()
-    else:
-        print 'Dummy Mode: Call to cleanup the GPIO pins.'
+    """ will call the RPi.GPIO library to cleanup all the hardware pin_number states """    
+    GPIO.cleanup()    
 
 # this module can also be used for some quick GPIO pin_number testing
 if __name__ == "__main__":    

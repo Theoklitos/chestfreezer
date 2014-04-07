@@ -32,6 +32,8 @@ DEFAULT_PORT = 80
 DEFAULT_EMAILS_TO_NOTIFY = ''
 DEFAULT_EMAILS_TO_WARN = ''
 
+_should_send_emails = True
+
 def does_config_file_exist():
     return config_file is not None
 
@@ -138,3 +140,12 @@ def emails_to_warn():
 def emails_to_notify():
     """ who should get notifications from the chestfreezer? """
     return _get_option_with_default('emails_to_notify', DEFAULT_EMAILS_TO_NOTIFY).split(',')
+
+def set_should_send_emails(should):
+    """ sets if the email should be send or not """
+    global _should_send_emails    
+    _should_send_emails = should
+
+def should_send_emails():
+    """ is the emailer enabled? this can be set only at runtime """
+    return _should_send_emails
