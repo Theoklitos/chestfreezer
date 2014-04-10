@@ -23,3 +23,6 @@ class TestConfiguration(unittest.TestCase):
         configuration._get_option_with_default.return_value = '   '
         assert(configuration.is_ip_allowed('666.666.666.666'))
         assert(configuration.is_ip_allowed('999.999.999.999'))
+        
+if __name__ == '__main__':
+    unittest.main()

@@ -18,7 +18,7 @@ from threading import Thread
 TEMPERATURE_PROBE_PATH = '/sys/bus/w1/devices/' 
 probe_ids = []
 
-last_master_reading = None
+_last_master_reading = None
 master_probe_id = None 
 
 class Probe():
@@ -46,7 +46,7 @@ class TemperatureReading():
     def __init__(self, probe_id, temperature_C, timestamp=None):
         self.probe_id = str(probe_id)
         self.temperature_C = temperature_C
-        self.temperature_F = temperature_C * 9.0 / 5.0 + 32.0
+        self.temperature_F = misc_utils.celsius_to_fahrenheit(temperature_C)
         if timestamp is None:
             self.timestamp = _get_new_timestamp()
         else:
@@ -119,6 +119,7 @@ def determine_master_probe():
     if not is_anyone_master:
         first_result.master = True 
         database.db_adapter.store_probe(first_result)
+        global master_probe_id
         master_probe_id = first_result.probe_id
         print 'Auto-determined probe #' + str(first_result.probe_id) + ' to be the master one.' 
 
@@ -127,7 +128,10 @@ def set_probe_as_not_master(probe_id):
     probe = database.db_adapter.get_probe_by_id(probe_id)
     if probe.master:        
         probe.master = False
+        global master_probe_id
         master_probe_id = None
+        global _last_master_reading
+        _last_master_reading = None
         database.db_adapter.store_probe(probe)    
     
 def set_probe_as_master(probe_id):
@@ -135,6 +139,8 @@ def set_probe_as_master(probe_id):
     found = False
     for probe in database.db_adapter.get_all_probes():
         if probe.probe_id == probe_id:
+            global master_probe_id
+            master_probe_id = probe.probe_id
             probe.master = True
             database.db_adapter.store_probe(probe)
             found = True
@@ -144,6 +150,10 @@ def set_probe_as_master(probe_id):
     if not found:
         determine_master_probe()                
         raise Exception('Could not find probe #' + probe_id + ', no update done.')
+
+def get_current_temperature():
+    """ returns the last temperature from the master probe. No DB access """
+    return _last_master_reading
 
 def get_master_probe():
     """ returns the probe set to master """

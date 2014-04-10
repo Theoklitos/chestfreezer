@@ -14,6 +14,9 @@ Two devices should be connected to the relays: A "heater" and a "freezer". This 
 thermostat. Temperatures are measured from the sensors, and target temperatures can be set by the user. The two
 relay devices can also be controlled directly.
 
+The basic mechanism is the "instruction", which is a target temperature that is to be maintained along with 
+two timestamps (start, end) that define the time interval in which we wish this temperature to be maintained
+
 
 Temperature Algorithm
 ---------------------
@@ -23,14 +26,35 @@ very inefficient and should be amended in the future.
 
 API
 ---
-There are several resources one can call directly:
-* WIP
-Access control is a single username/password in the config file.
+There are several resources one can call directly, values can be given either as a form or in JSON format:
+
+* __GET /chestfrezer/api/temperature__, in order to get all the readings so far. Query parameters _start_ and _end_
+as unit timestamps can specify a range of readings.
+* __GET /chestfrezer/api/temperature/target__, for information about the current target temperature that is attempted to
+be maintained.
+* __POST /chestfrezer/api/temperature/target__ in order to set a temperature directly (also referred to as an override).
+
+* __GET /chestfrezer/api/temperature/instruction__, to get all the instructions. Instructions can also be time filtered by
+a _start_ and _end_ timestamp query parameters.
+* __POST /chestfrezer/api/temperature/instruction__, to create a new instruction.
+* __PUT /chestfrezer/api/temperature/instruction/<id>__, to update an existing instruction, and
+* __DELETE /chestfrezer/api/temperature/instruction<id>__, to delete it.
+
+* __GET /chestfrezer/api/temperature/probe__, to get all the existing temperature sensors. A temp. sensor has an unique 
+hardware-bound ID and a settable name, and also a "master" boolean value that determines which is the probe that defines 
+the actual tempetarure.
+* __PUT /chestfrezer/api/temperature/probe/<id>__, to modify an existing probe's data.
+
+* __GET /chestfrezer/api/temperature/device__, to get the state of the freezer and the cooler.
+* __POST /chestfrezer/api/temperature/device/<device_name>__ in order to switch the freezer or cooler on/off.
+
+Access control is a single username/password in the config file that is matched to the Basic auth header.
+
 
 Frontend
 --------
-There is a simple javascript frontend using HTML5 graphs and some jQuery to visualize the data and control the sensors.
-
+There will be a simple javascript frontend using HTML5 graphs and some jQuery to visualize the data and control the sensors.
+For the time being there is nothing... use curl :(
 
 
 Configuration

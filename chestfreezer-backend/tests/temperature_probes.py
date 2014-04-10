@@ -19,8 +19,7 @@ class TestTemperatureProbes(unittest.TestCase):
         """ returns all the temperature readings from the DB - works only in-memory """
         return db_adapter.cursor.execute("SELECT * FROM " + db_adapter.TEMPERATURE_READINGS_TABLE_NAME).fetchall()
     
-    @classmethod
-    def setUpClass(self):        
+    def setUp(self):        
         db_adapter.configuration.db_type = overwriten_db_type
         db_adapter.connect()        
         temperature_probes.initialize_probes()
@@ -53,3 +52,7 @@ class TestTemperatureProbes(unittest.TestCase):
     def tearDown(self):        
         db_adapter.drop_tables()
         db_adapter.initialize_tables()
+
+if __name__ == '__main__':
+    unittest.main()
+

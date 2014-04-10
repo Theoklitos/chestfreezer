@@ -23,8 +23,10 @@ DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS = 5
 store_interval_overwrite = None
 DEFAULT_INSTRUCTION_CHECK_INTERVAL_SECONDS = 60
 instruction_interval_overwrite = None
-DEFAULT_WEB_USER = 'brewmaster'
-DEFAULT_WEB_PASSWORD = 'h3f3w3iz3n'
+DEFAULT_CONTROL_TEMPERATURE_CHECK_INTERVAL_SECONDS = 5
+control_temperature_interval_overwrite = None
+DEFAULT_WEB_USER = 'test-username'
+DEFAULT_WEB_PASSWORD = 'test-password'
 DATABASE_IN_DISK_CONFIG_VALUE = 'disk'
 DATABASE_IN_MEMORY_CONFIG_VALUE = 'memory' 
 DEFAULT_DB_TYPE = 'disk'
@@ -103,7 +105,7 @@ def web_user():
 
 def web_pwd():
     """ returns the password for authentication in the web interface """
-    return _get_option_with_default('web_pwd', DEFAULT_WEB_PASSWORD)
+    return _get_option_with_default('web_password', DEFAULT_WEB_PASSWORD)
 
 def heater_pin():
     """ returns the GPIO pin # that controls the heater, which is the 1st plug in the relay """
@@ -129,6 +131,18 @@ def db_name():
     """ which database should our app use? """
     return _get_option_with_default('db_name', DEFAULT_DB_NAME)
 
+def control_temperature_interval_seconds():
+    """ returns every how many seconds the temperature should be monitored """
+    if control_temperature_interval_overwrite is None:
+        return float(_get_option_with_default('monitor_temperature_interval_time_seconds', DEFAULT_CONTROL_TEMPERATURE_CHECK_INTERVAL_SECONDS))
+    else:
+        return float(control_temperature_interval_overwrite)
+
+def set_control_temperature_interval_seconds(seconds):
+    """ sets every how many seconds the temperature should be monitored """
+    global control_temperature_interval_overwrite
+    control_temperature_interval_overwrite = seconds
+    
 def instruction_interval_seconds():
     """ returns every how many seconds there should be a check for new instructions """
     if instruction_interval_overwrite is None:

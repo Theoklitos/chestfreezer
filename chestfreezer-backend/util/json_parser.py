@@ -3,9 +3,13 @@ Created on Apr 4, 2014
 
 Simple json marshalling utils for the classes in this project
 
+#TODO Note: This whole module is pointless! Bottle.py can easily marshal dictionaries into/from json!
+
 @author: theoklitos
 '''
 from control import brew_logic
+from hardware import temperature_probes
+from util import misc_utils
 
 
 def _pretty_state_identifier(state):
@@ -56,4 +60,33 @@ def get_probe_as_json(probe):
     result = '{\n  "probe_id" : "' + str(probe.probe_id) + '",\n  "name" : "' + str(probe.name) + '",\n  "master" : "' + master_value + '"\n}'
     return result 
     
+def get_instruction_as_json(instruction):
+    """ returns a single instruction as a json object """
+    result = '{\n  "instruction_id" : "' + instruction.instruction_id + '",\n  "target_temperature_C" : "' + str(instruction.target_temperature_C) + '",\n  "from_timestamp" : "' + str(instruction.from_timestamp) + '",\n  "to_timestamp" : "' + str(instruction.to_timestamp) + '",\n  "description" : "' + instruction.description + '"\n}'
+    return result
+
+def get_instruction_array_as_json(instruction_list):
+    """ returns the given instruction array as a json list """
+    result = '['
+    for instruction in instruction_list:
+        result += '\n' + get_instruction_as_json(instruction) + ','
+    if len(instruction_list) != 0:
+        result = result[:-1] 
+    return result + '\n]'    
+
+def get_target_temperature_json():
+    """ returns information about the current "target" temperature """
+    is_overriden = False    
+    if brew_logic.temperature_override_C is not None:
+        actual_target_C = brew_logic.temperature_override_C
+        is_overriden = True
+    elif brew_logic.target_temperature_C is not None: actual_target_C = brew_logic.target_temperature_C
+    elif (brew_logic.target_temperature_C is None) & (not is_overriden): return 
+    if actual_target_C is None: return
+    current_instruction_json = ""
+    actual_target_F = misc_utils.celsius_to_fahrenheit(actual_target_C)
+    if brew_logic.current_instruction_id is not None: current_instruction_json = ',\n"current_instruction_id" : "' + brew_logic.current_instruction_id + '" '
+    return '{\n  "target_temperature_C" : ' + str(actual_target_C) + ',\n  "target_temperature_F" : ' + str(actual_target_F) + ',\n  "overridden" : "' + str(is_overriden).lower() + '"' + current_instruction_json + '\n}' 
+    
+
 

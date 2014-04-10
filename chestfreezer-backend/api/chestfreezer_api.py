@@ -12,6 +12,10 @@ from util import configuration, json_parser, misc_utils, emailer
 from database import db_adapter
 import time
 from threading import Thread
+from control import brew_logic
+from hardware import temperature_probes
+import traceback
+from control.brew_logic import InstructionException, Instruction
 
 WEB_INTERFACE_ROOT = "/chestfreezer"
 API_ROOT = WEB_INTERFACE_ROOT + "/api"
@@ -22,58 +26,100 @@ ACCESS_LOG_FILE = os.getcwd() + '/../accessLog'
 
 web_run_thread = None 
 
+def _is_heater(name):
+    """ returns true if the given name matches the heater name """
+    return name.strip().lower() == 'heater'
+        
+def _is_freezer(name):
+    """ returns true if the given name matches the freezer name """    
+    return name.strip().lower() == 'freezer'
+    
 def _log_and_print_security_message(message):
     """ logs and prints the given message to a file, used for logging security access """
     print message    
     if configuration._should_log_security: misc_utils.append_to_file(ACCESS_LOG_FILE, message)  
 
-def do_auth_check():
-    """ checks the user's credential with what is in the config """    
+def _do_auth_check():
+    """ checks the user's credential with what is in the config """        
     authorized = False
-    blocked_ip = False
+    allowed_ip = False
     ip = 'Unknown IP' 
     pretty_now_datetime = misc_utils.timestamp_to_datetime(time.time()).strftime("%c")   
     enviroment_list = request.environ
     if enviroment_list.get('REMOTE_ADDR') is None:
         ip = enviroment_list.get('REMOTE_ADDR')
-        blocked_ip = configuration.is_ip_allowed(ip) | (ip == 'Unknown IP')
+        allowed_ip = configuration.is_ip_allowed(ip) | (ip == 'Unknown IP')
     if not configuration.is_security_enabled(): 
         authorized = True
     elif request.auth is not None:        
         user, password = request.auth
-        blocked_ip = ip not in configuration.is_ip_allowed()
-        if (user == configuration.web_user()) & (password == configuration.web_pwd()) & (not blocked_ip):    
+        allowed_ip = configuration.is_ip_allowed(ip)
+        # print user + '==' + configuration.web_user() + ':' + str(user == configuration.web_user())
+        # print password + '==' + configuration.web_pwd() + ':' + str(password == configuration.web_pwd())
+        if (user == configuration.web_user()) & (password == configuration.web_pwd()) & (allowed_ip):    
             authorized = True    
     if authorized:
         _log_and_print_security_message(pretty_now_datetime + ': Address [' + ip + '] accessed the API')
-        return # all good
+        return  # all good
     else:
         message = pretty_now_datetime + ': Unauthorized access from [' + ip + ']'         
         _log_and_print_security_message(message)
-        if blocked_ip: emailer.escalate("Unauthorized access", message)
-        abort(401,"This method requires basic authentication")
+        if not allowed_ip: emailer.escalate("Unauthorized access", message)
+        abort(401, "This method requires basic authentication")
 
 def _log_and_escalate(error_code, message):
     """ logs an error message and aborts """
-    print 'Error code: ' + str(error_code) + '. Message: ' + message
-    emailer.escalate("Chestfreezer Error " + str(error_code), "Error code " + str(error_code) + "\n\nMessage: " + message)                    
+    tb = traceback.format_exc()
+    print 'Error code: ' + str(error_code) + '. Message: ' + message + '\n\n' + tb
+    if error_code == 500:
+        emailer.escalate("Chestfreezer Error " + str(error_code), "Error code " + str(error_code) + "\n\nMessage: " + message)                    
     abort(error_code, message)    
 
-def chestfreezer_call_decorator(fn):    
-    def wrapper_function(*args, **kwargs):
-        do_auth_check()    
-        try:
-            return fn(*args, **kwargs);
-        except HTTPError as e:                  
-            _log_and_escalate(e.status, e.output)
-            raise e
-        except Exception as e:                       
-            _log_and_escalate(500, "Unspecified error: " + str(e))
-            raise e
-    return wrapper_function
+def _does_parameter_have_value(parameter_name, possible_parameter_values_list, should_abort_if_missing=False, should_abort_if_false=False):
+    """ returns true if the given parameter name contains at least one of the possible values """    
+    parameter_value = _get_parameter_value(parameter_name, should_abort_if_missing)
+    if parameter_value in possible_parameter_values_list:
+        return True
+    else:
+        if should_abort_if_false:
+            abort(400, 'Parameter "' + parameter_name + '" should have a value from the following: ' + str(possible_parameter_values_list))
+        else:
+            return False
 
-@bottle.get(API_ROOT + '/temperature', apply=[chestfreezer_call_decorator])
-def get_temperatures():        
+def _get_parameter_value(parameter_name, should_abort_if_missing=False):
+    """ returns the (first) parameter value for the given parameter name """
+    if request.get_header('content-type') == 'application/json':
+        json_map = request.json
+        parameter_value = json_map.get(parameter_name.strip())
+    else:  # otherwise try as a form
+        parameter_value = request.forms.get(parameter_name.strip(), None)
+    
+    if (parameter_value is None) & (should_abort_if_missing):
+            abort(400, 'Missing parameter "' + parameter_name + '"')
+    return parameter_value
+
+def _get_boolean_value(parameter_name, should_abort_call_if_neither=True):
+    """ returns true or false, and aborts the call if the value is neither """
+    result = None 
+    if _does_parameter_have_value(parameter_name, ['True', 'true', 'TRUE']):
+        result = True
+    elif _does_parameter_have_value(parameter_name, ['False', 'false', 'FALSE']):
+        result = False    
+    if (result == None) & (_get_parameter_value(parameter_name) is not None) & should_abort_call_if_neither:
+        abort('Parameter "' + parameter_name + '" muts be either "true" or "false"')
+    return result
+
+def _get_timestamp_parameter(parameter_name, should_abort_if_missing=False):
+    """ tries to get a (unix) timestamp parameter as an integer """
+    try:
+        value = _get_parameter_value(parameter_name, should_abort_if_missing)
+        if value is not None:
+            return int(value)
+    except ValueError:
+        abort(400, 'Parameter\'s "' + parameter_name + '" value "' + value + '" is not a valid timestamp.')
+    
+def _get_timestamp_query_parameters():
+    """ returns both a start and an end timestamp parameter, from the query string """
     start_timestamp = 1
     end_timestamp = int(time.time())    
     if request.query_string:    
@@ -81,15 +127,226 @@ def get_temperatures():
         end_timestamp = request.query.end
         if (not start_timestamp) | (not end_timestamp):
             abort(400, "Provide both 'start' and 'end' timestamp query parameters")
+    return (str(int(start_timestamp)), str(int(end_timestamp)))
+
+def chestfreezer_call_decorator(fn):
+    """ the decorator that handles exceptions and security, applied to all calls """    
+    def wrapper_function(*args, **kwargs):
+        _do_auth_check()    
+        try:
+            return fn(*args, **kwargs);
+        except HTTPError as e:                        
+            _log_and_escalate(e.status, e.output)
+            raise e
+        except Exception as e:                       
+            _log_and_escalate(500, "Unspecified error: " + str(e))
+            raise e
+    return wrapper_function
+
+
+
+########################## TEMPERATURES #################################################################################
+@bottle.get(API_ROOT + '/temperature', apply=[chestfreezer_call_decorator])
+def get_temperatures():              
+    start_timestamp, end_timestamp = _get_timestamp_query_parameters()
     try:
-        print 'Asked for temperature readings from ' + misc_utils.timestamp_to_datetime(float(start_timestamp)).strftime("%c") + ' to ' + misc_utils.timestamp_to_datetime(float(end_timestamp)).strftime("%c") + '...',                    
+        print 'Asked for temperature readings from ' + misc_utils.timestamp_to_datetime(float(start_timestamp)).strftime("%c") + ' to ' + misc_utils.timestamp_to_datetime(float(end_timestamp)).strftime("%c") + '...',
         all_readings = db_adapter.get_temperature_readings(int(start_timestamp), int(end_timestamp))
         print 'got ' + str(len(all_readings)) + ' result(s).'
         response.content_type = 'application/json;'                
         return json_parser.get_temperature_reading_array_as_json(all_readings)    
     except (TypeError, ValueError) as e:
         abort(400, "Malformed timestamp parameter(s): " + str(e))
+
+def _check_for_temperature_override_removal():
+    """ checks if there is an override parameter and if its set to False """
+    override = _get_boolean_value('override',False)
+    if override is not None:
+        if not override:
+            brew_logic.remove_temperature_overwrite()
+            return True
+        elif override:
+            abort(400, '"override" value cannot be set to "true" directly')        
+
+@bottle.post(API_ROOT + '/temperature/target', apply=[chestfreezer_call_decorator])
+def set_temperature_directly():   
+    if _check_for_temperature_override_removal(): return  
+    target_temperature_C = _get_parameter_value("target_temperature_C")
+    target_temperature_F = _get_parameter_value("target_temperature_F")
+    if (target_temperature_C is not None) & (target_temperature_F is not None):
+        abort(400, 'Either set the temperature in Celsius or Fahrenheit, but not both.')    
+    if target_temperature_F is not None: target_temperature_C = misc_utils.fahrenheit_to_celsius(float(target_temperature_F))
+    brew_logic.set_temperature_overwrite(float(target_temperature_C))
+    print 'Target temperature override set to ' + str(target_temperature_C) + 'C/' + str(misc_utils.celsius_to_fahrenheit(target_temperature_C)) + 'F'
+
+@bottle.get(API_ROOT + '/temperature/target', apply=[chestfreezer_call_decorator])
+def get_target_temperature():
+    return json_parser.get_target_temperature_json()
+##########################################################################################################################
+
+
+
+########################## INSTRUCTIONS #################################################################################
+def _get_instruction(instruction_id):
+    """ tries to get instruction via ID and aborts (404) if it can't be found """
+    result = db_adapter.get_instruction_by_id(instruction_id)    
+    if result is None:
+        abort(404, 'Instruction with ID ' + instruction_id + ' does not exist.')
+    return result
+
+@bottle.get(API_ROOT + '/instruction', apply=[chestfreezer_call_decorator])
+def get_instructions():    
+    if (request.query_string is not None) & ('now' in request.query_string):
+        print 'Returning instruction for current time...'
+        try:
+            return json_parser.get_instruction_as_json(db_adapter.get_instructions()[0])
+        except IndexError:
+            # no current instruction
+            return ''
+    start_timestamp, end_timestamp = _get_timestamp_query_parameters()
+    try:
+        print 'Asked for instructions from ' + misc_utils.timestamp_to_datetime(float(start_timestamp)).strftime("%c") + ' to ' + misc_utils.timestamp_to_datetime(float(end_timestamp)).strftime("%c") + '...',
+        all_instructions = db_adapter.get_instructions(int(start_timestamp), int(end_timestamp))
+        print 'got ' + str(len(all_instructions)) + ' result(s).'
+        response.content_type = 'application/json;'                        
+        return json_parser.get_instruction_array_as_json(all_instructions)    
+    except (TypeError, ValueError) as e:
+        abort(400, "Malformed timestamp parameter(s): " + str(e))
     
+@bottle.get(API_ROOT + '/instruction/<instruction_id>', apply=[chestfreezer_call_decorator])
+def get_instruction(instruction_id):
+    instruction = _get_instruction(instruction_id)
+    return json_parser.get_instruction_as_json(instruction)
+
+@bottle.delete(API_ROOT + '/instruction/<instruction_id>', apply=[chestfreezer_call_decorator])
+def delete_instruction(instruction_id):
+    _get_instruction(instruction_id)  # just check if it exists
+    db_adapter.delete_instruction(instruction_id)
+    print 'Deleted instruction #' + instruction_id
+
+@bottle.post(API_ROOT + '/instruction', apply=[chestfreezer_call_decorator])
+def create_instruction():
+    if _get_parameter_value('instruction_id') is not None:
+        abort(400, 'Instruction ID cannot be set directly.')
+    target_temperature_C = float(_get_parameter_value("target_temperature_C", True))
+    from_timestamp = _get_timestamp_parameter('from_timestamp', True)
+    to_timestamp = _get_timestamp_parameter('to_timestamp', True)
+    description = _get_parameter_value('description')
+    new_instruction = Instruction(None, target_temperature_C, from_timestamp, to_timestamp, description)
+    before_ids = db_adapter.get_all_instruction_ids()
+    brew_logic.store_instruction_for_unique_time(new_instruction)
+    after_ids = db_adapter.get_all_instruction_ids()    
+    new_id = list(set(after_ids) - set(before_ids))[0]
+    response.status = 201
+    return '{ "instruction_id" : "' + new_id + '" }'  # not really RESTful, will fix later
+
+@bottle.put(API_ROOT + '/instruction/<instruction_id>', apply=[chestfreezer_call_decorator])
+def modify_instruction(instruction_id):
+    original_instruction = _get_instruction(instruction_id)
+    if _get_parameter_value('instruction_id') is not None:
+        abort(400, 'Instruction ID cannot be modified')    
+    try:
+        if _get_parameter_value('target_temperature_C') is not None:
+                original_instruction.target_temperature_C = float(_get_parameter_value('target_temperature_C'))            
+        original_instruction.set_from_timestamp_safe(_get_timestamp_parameter('from_timestamp'))        
+        original_instruction.set_to_timestamp_safe(_get_timestamp_parameter('to_timestamp'))        
+        if _get_parameter_value('description') is not None:
+            original_instruction.description = str(_get_parameter_value('description')).strip()
+    except (ValueError, TypeError):
+        abort(400, 'One or more of the parameter values where malformed')
+    try:        
+        brew_logic.store_instruction_for_unique_time(original_instruction)
+        print 'Modified instruction #' + instruction_id
+    except InstructionException:
+        abort(400, 'Instruction date(s) either do not make sense or overlap some other instruction.')
+##########################################################################################################################
+       
+        
+
+########################## PROBES #################################################################################
+@bottle.get(API_ROOT + '/probe', apply=[chestfreezer_call_decorator])
+def get_all_probes():
+    response.content_type = 'application/json;' 
+    return json_parser.get_probe_array_as_json(db_adapter.get_all_probes())
+
+@bottle.get(API_ROOT + '/probe/<probe_id>', apply=[chestfreezer_call_decorator])
+def get_probe(probe_id):
+    probe = db_adapter.get_probe_by_id(probe_id)
+    if probe is None:
+        abort(400, 'Probe with id "' + probe_id + '" does not exist.')
+    else:
+        response.content_type = 'application/json;' 
+        return json_parser.get_probe_as_json(probe)
+
+@bottle.put(API_ROOT + '/probe/<probe_id>', apply=[chestfreezer_call_decorator])
+def set_probe(probe_id):
+    probe = db_adapter.get_probe_by_id(probe_id)
+    if probe is None:
+        abort(400, 'Probe with id "' + probe_id + '" does not exist.')
+    else:
+        new_name = _get_parameter_value('name')
+        master = _get_boolean_value("master")
+        if new_name is not None:
+            temperature_probes.set_probe_name(probe_id, new_name)
+            print 'Set name of probe ' + probe_id + ' to ' + new_name        
+        if master is not None:
+            if master: 
+                temperature_probes.set_probe_as_master(probe_id)
+                print 'Probe ' + probe_id + ' is now the master probe.'
+            else: 
+                temperature_probes.set_probe_as_not_master(probe_id)
+                print 'Probe ' + probe_id + ' is no longer the master probe.'
+####################################################################################################################
+
+
+
+########################## DEVICES #################################################################################
+@bottle.get(API_ROOT + '/device', apply=[chestfreezer_call_decorator])
+def get_all_devices_state():
+    response.content_type = 'application/json;' 
+    return json_parser.get_both_devices_json()
+    
+@bottle.get(API_ROOT + '/device/<device_name>', apply=[chestfreezer_call_decorator])
+def get_device_state(device_name):
+    response.content_type = 'application/json;' 
+    if _is_freezer(device_name):
+        return json_parser.get_freezer_device_json()
+    elif _is_heater(device_name):
+        return json_parser.get_heater_device_json()
+    else: 
+        abort(400, 'Device "' + device_name + '" is unrecognized. Please use "heater" or "freezer"')    
+
+@bottle.post(API_ROOT + '/device/<device_name>', apply=[chestfreezer_call_decorator])
+def set_device_state(device_name):    
+    state = None
+    if _does_parameter_have_value('state', ['on', 'ON', 'On', 'True', 'true', 'TRUE']):
+        state = True
+    elif _does_parameter_have_value('state', ['off', 'OFF', 'Off', 'False', 'false', 'FALSE']):
+        state = False  
+    else: 
+        abort(400, 'Parameter "state" must be either "on"/"true" or "off"/"false"')
+        
+    override = _get_boolean_value('override')    
+    
+    if (state is not None) & (override is not None):
+        abort(400, 'Either set the "override" value or the "state", but not both.')
+    
+    if _is_freezer(device_name):
+        if state is None:
+            brew_logic.remove_freezer_override()
+        else:
+            brew_logic.set_freezer_override(state)
+    elif _is_heater(device_name):
+        if state is None:
+            brew_logic.remove_heater_override(override)
+        else:
+            brew_logic.set_heater_override(state)
+    else: 
+        abort(400, 'Device "' + device_name + '" is unrecognized. Please use "heater" or "freezer"')
+####################################################################################################################
+
+
+
 @bottle.get(WEB_INTERFACE_ROOT)
 def js_spa():
     return static_files(FRONTEND_JAVASCRIPT_FILENAME)        

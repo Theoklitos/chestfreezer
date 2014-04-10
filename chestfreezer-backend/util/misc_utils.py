@@ -38,6 +38,23 @@ def timestamp_to_datetime(timestamp):
     """ converts a unix timestamp to a datetime object """
     return datetime.datetime.fromtimestamp(timestamp)
 
+def get_storeable_timestamp(timestamp):
+    """ from a unix timestsamp, returns a formatable datetime that can be stored in SQL """
+    return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+def is_within_distance(number, target_number, distance):
+    """ returns true if the number is within 'distance' from the 'target_number' """
+    actual_distance = abs(target_number - number)
+    return actual_distance <= distance     
+
+def celsius_to_fahrenheit(temperature_C):
+    """ converts C -> F """
+    return temperature_C * 9.0 / 5.0 + 32.0
+
+def fahrenheit_to_celsius(temperature_F):
+    """ converts F -> C """
+    return (temperature_F - 32) * (5.0 / 9.0)
+
 def append_to_file(filename, message):
     """ appends the given files to a file """
     filestream = open(filename, 'a')

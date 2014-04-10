@@ -5,6 +5,9 @@ Tests for the database adapter
 
 @author: theoklitos
 '''
+import sys
+import os
+sys.path.append(os.path.abspath('..'))
 import unittest
 from database import db_adapter
 from tests import test_data
@@ -37,7 +40,7 @@ class TestDatabaseAdapter(unittest.TestCase):
         startSeconds = str(int(time.time()) - 30)  # less than one minute ago        
         endSeconds = str(int(time.time()))
         result = db_adapter.get_temperature_readings(startSeconds, endSeconds)
-        assert(len(result) == 3)        
+        assert(len(result) == 3)
         startSeconds = str(int(time.time()) - 70)  # should go over one minute
         result = db_adapter.get_temperature_readings(startSeconds, endSeconds)
         assert(len(result) == 6)        
@@ -71,4 +74,7 @@ class TestDatabaseAdapter(unittest.TestCase):
     def tearDown(self):        
         db_adapter.drop_tables()
         db_adapter.initialize_tables()
+
+if __name__ == '__main__':
+    unittest.main()
         

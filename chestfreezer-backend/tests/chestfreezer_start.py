@@ -53,11 +53,9 @@ class TestDatabaseAdapter(unittest.TestCase):
         chestfreezer_start.logic.start_instruction_thread.assert_called_once_with() # @UndefinedVariable
         chestfreezer_start.logic.start_temperature_control_thread.assert_called_once_with() # @UndefinedVariable        
     
-    def test_start_web_interface(self):
-        chestfreezer_start.api.run_on_different_thread = Mock()
-        chestfreezer_start.start_web_interface()
-        
-        chestfreezer_start.api.run_on_different_thread.assert_called_once_with() # @UndefinedVariable
+    def test_start_web_interface(self):                
+        chestfreezer_start.start_web_interface()        
+        assert(chestfreezer_start.api.web_run_thread.isAlive())
 
 if __name__ == '__main__':
     unittest.main()

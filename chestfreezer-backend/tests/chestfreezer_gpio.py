@@ -36,3 +36,6 @@ class TestChestfreezerGPIO(unittest.TestCase):
         chestfreezer_gpio.cleanup()
         
         chestfreezer_gpio.GPIO.cleanup.assert_called_once_with() # @UndefinedVariable
+
+if __name__ == '__main__':
+    unittest.main()
