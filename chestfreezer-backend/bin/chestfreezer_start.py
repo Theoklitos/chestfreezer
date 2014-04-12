@@ -11,12 +11,12 @@ import os
 sys.path.append(os.path.abspath('..'))
 from util import configuration, misc_utils
 try:
-    __import__('RPi')   
+    __import__('hardware.chestfreezer_gpio')   
 except ImportError as e:
     print 'Dependency error: ' + str(e)
     sys.exit('You probably don\'t have RPi installed. Try visiting https://pypi.python.org/pypi/RPi.GPIO')    
 except RuntimeError:        
-    # this is handled in the chestfreezer_gpio.py module, do nothing here
+    # this is handled in the chesstfreezer_gpio.py module, do nothing here
     pass    
 try:
     __import__('api')

@@ -14,7 +14,7 @@ try:
 except RuntimeError:
     print 'Cannot access GPIO pins. You are probably not using a raspberry-pi, therefore dummy hardware mode will be enabled.'    
     using_real_pi = False  
-import tests.dummy_GPIO as GPIO
+import tests.dummy_GPIO as GPIO  # @Reimport
 
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BOARD)
