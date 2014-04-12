@@ -5,11 +5,13 @@ db_user = brewmaster
 db_password = h3f3w3iz3n
 db_type = memory
 
+security_enabled = True
+
 instruction_check_interval_time_seconds = 60
 temperature_store_interval_time_seconds = 5
 monitor_temperature_interval_time_seconds = 5
 
-emails_to_notify = thechristodoulou@gmail.com, chestfriseur@gmail.com
+emails_to_notify = thechristodoulou@gmail.com
 emails_to_warn = thechristodoulou@gmail.com
 
 port = 8080

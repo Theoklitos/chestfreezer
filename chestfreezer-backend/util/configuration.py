@@ -37,7 +37,7 @@ DEFAULT_EMAILS_TO_WARN = ''
 
 _should_log_security = True
 _should_send_emails = True
-_is_security_enabled = True
+_is_security_enabled = None
 
 def does_config_file_exist():
     return config_file is not None
@@ -62,12 +62,21 @@ else:
 def _get_array_option_with_default(option_name, default_value):
     """ returns a list (trimmed) from a comma-separated value """
     pattern = re.compile('\s*,\s*')    
-    result =  pattern.split(_get_option_with_default(option_name, default_value))
+    result = pattern.split(_get_option_with_default(option_name, default_value))
     if (len(result) == 1) & (not result[0].strip()):
         return []     
     else:
         return result
-    
+
+def _get_boolean_option(option_name, default_value):
+    """ parses and returns a config value of true/false to a boolean object """
+    value = _get_option_with_default(option_name, default_value).strip()    
+    if value in ['True', 'true', 'TRUE']:
+        return True
+    elif value in ['False', 'false', 'FALSE']:
+        return False
+    else: return default_value
+
 def _get_option_with_default(option_name, default_value):
     """ if the option exists, returns its value. If it is empty or does not exist, returns the default value"""
     try:
@@ -183,12 +192,15 @@ def set_is_security_enabled(should):
     
 def is_security_enabled():
     """ should the api check basic auth credentials """
-    return _is_security_enabled
+    if _is_security_enabled is None:
+        return _get_boolean_option('security_enabled', True)
+    else:
+        return _is_security_enabled
 
 def is_ip_allowed(ip):
     """ returns true if the given IP is allowed to access the api """
-    allowed_ips =_get_array_option_with_default('allowed_ips', '')    
-    return (not allowed_ips) | (len(allowed_ips)== 0) | (ip in allowed_ips)    
+    allowed_ips = _get_array_option_with_default('allowed_ips', '')    
+    return (not allowed_ips) | (len(allowed_ips) == 0) | (ip in allowed_ips)    
          
 
 

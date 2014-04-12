@@ -62,10 +62,10 @@ class TestBrewLogic(unittest.TestCase):
         assert(len(db_adapter.get_all_instructions()) == 0)
     
     def test_instructions_for_times(self):
-        instruction1 = Instruction(None, 10, time.time() - 600, time.time(), 'Test instruction low')
-        instruction2 = Instruction(None, 30, time.time() - 1200, time.time() - 600, 'Test instruction high')
+        instruction1 = Instruction(1, 10, time.time() - 599, time.time() - 100, 'Test instruction low')
+        instruction2 = Instruction(2, 30, time.time() - 1200, time.time() - 600, 'Test instruction high')
         brew_logic.store_instruction_for_unique_time(instruction1)        
-        brew_logic.store_instruction_for_unique_time(instruction2)
+        brew_logic.store_instruction_for_unique_time(instruction2)        
         assert(len(db_adapter.get_all_instructions()) == 2)        
         assert(len(db_adapter.get_instructions()) == 0)        
         results = db_adapter.get_instructions(time.time() - 300, time.time() - 300)        
@@ -75,9 +75,9 @@ class TestBrewLogic(unittest.TestCase):
         results = db_adapter.get_instructions(time.time() - 700, time.time() - 200)
         assert(len(results) == 2)
              
-    def add_instruction_overlap(self):
-        instruction1 = Instruction(None, 10, time.time() - 600, time.time(), 'overlap instruction 1')
-        instruction2 = Instruction(None, 30, time.time() - 1200, time.time() - 400, 'overlap instruction 2')
+    def test_add_instruction_overlap(self):
+        instruction1 = Instruction(1, 10, time.time() - 600, time.time(), 'overlap instruction 1')
+        instruction2 = Instruction(2, 30, time.time() - 1200, time.time() - 400, 'overlap instruction 2')
         brew_logic.store_instruction_for_unique_time(instruction1)
         try:        
             brew_logic.store_instruction_for_unique_time(instruction2)

@@ -174,9 +174,21 @@ class TestChestfreezerAPI(unittest.TestCase):
         json = '{ "description" : "Instruction created from web API", "target_temperature_C" : "15.5", "from_timestamp" : "10", "to_timestamp" : "2397162478" }'        
         response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/instruction', json, 'application/json')[0]
         assert(response.status == 201)
-        time.sleep(1)
-        assert(brew_logic.target_temperature_C == 15.5)        
-        assert(False)
+        time.sleep(0.5)
+        # the instruction takes over
+        assert(brew_logic.get_actual_target_temperature_C() == 15.5)
+        # we manually override
+        response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/temperature/target', '{"target_temperature_C": -5.1}', 'application/json')[0]
+        assert(response.status == 200)
+        time.sleep(0.5)
+        assert(brew_logic.get_actual_target_temperature_C() == -5.1)
+        # we remove our override
+        time.sleep(0.5) 
+        response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/temperature/target', '{"override": "false" }', 'application/json')[0]
+        assert(response.status == 200)
+        # the instruction temperature should be used again
+        time.sleep(0.5)         
+        assert(brew_logic.get_actual_target_temperature_C() == 15.5)
     
     def test_get_instructions(self):
         instruction1 = Instruction(1, 15, time.time() - 600, time.time() - 100, 'Test instruction 15C')

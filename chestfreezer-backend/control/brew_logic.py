@@ -67,10 +67,11 @@ def start_instruction_thread():
                 instructions = database.db_adapter.get_all_instructions()                
                 if len(instructions) > 1:
                     pretty_date = misc_utils.get_storeable_timestamp(time.time())
-                    instructions_string = ', '.join(map(str, instructions))
-                    message = "Instruction error", "More than one instruction for time " + pretty_date + ":\n" + instructions_string
+                    instructions_string = ',\n'.join(map(str, instructions))
+                    message = "More than one instruction for time " + pretty_date + ":\n" + instructions_string
                     if not has_escalated:                        
-                        emailer.escalate(message)
+                        emailer.escalate("Instruction error", message)
+                        global has_escalated
                         has_escalated = True    
                     print message                
                 elif len(instructions) == 1:
@@ -97,7 +98,7 @@ def set_temperature_overwrite(temperature_C):
     global temperature_override_C
     temperature_override_C = float(temperature_C)
 
-def remove_temperature_overwrite():
+def remove_temperature_override():
     """ will clear whatever temperature override is there """
     global temperature_override_C
     temperature_override_C = None
@@ -108,7 +109,7 @@ class InstructionException(Exception):
 
 def store_instruction_for_unique_time(instruction):
     """ stores the instruction only if no other instruction is assigned to its given timeslot. """    
-    results = database.db_adapter.get_instructions(instruction.from_timestamp, instruction.to_timestamp)    
+    results = database.db_adapter.get_instructions(instruction.from_timestamp, instruction.to_timestamp)
     if len(results) == 0: database.db_adapter._store_instruction(instruction)    
     elif (not ((len(results) == 1) & (results[0].instruction_id == instruction.instruction_id))) | (len(results) > 1):
         raise InstructionException

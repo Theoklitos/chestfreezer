@@ -13,7 +13,7 @@ try:
     import RPi.GPIO as GPIO  # @UnusedImport
 except (RuntimeError, ImportError) as e:
     print 'Dependency error: ' + str(e)
-    print 'Cannot access GPIO pins. You either don\'t have RPi installed or are not using a raspberry-pi.\nIf you are using a raspberry-pi, visit https://pypi.python.org/pypi/RPi.GPIO\n. For now, hardware dummy hardware mode will be enabled.'    
+    print 'Cannot access GPIO pins. You either don\'t have RPi installed or are not using a raspberry-pi.\nIf you are using a raspberry-pi, visit https://pypi.python.org/pypi/RPi.GPIO\nFor now, hardware dummy hardware mode will be enabled.'    
     using_real_pi = False  
 import tests.dummy_GPIO as GPIO  # @Reimport
 

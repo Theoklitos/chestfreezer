@@ -8,7 +8,6 @@ Simple json marshalling utils for the classes in this project
 @author: theoklitos
 '''
 from control import brew_logic
-from hardware import temperature_probes
 from util import misc_utils
 
 
@@ -80,8 +79,8 @@ def get_target_temperature_json():
     if brew_logic.temperature_override_C is not None:
         actual_target_C = brew_logic.temperature_override_C
         is_overriden = True
-    elif brew_logic.target_temperature_C is not None: actual_target_C = brew_logic.target_temperature_C
-    elif (brew_logic.target_temperature_C is None) & (not is_overriden): return 
+    elif brew_logic.instruction_target_temperature_C is not None: actual_target_C = brew_logic.instruction_target_temperature_C
+    elif (brew_logic.instruction_target_temperature_C is None) & (not is_overriden): return 
     if actual_target_C is None: return
     current_instruction_json = ""
     actual_target_F = misc_utils.celsius_to_fahrenheit(actual_target_C)
