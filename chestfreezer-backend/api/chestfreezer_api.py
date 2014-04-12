@@ -171,13 +171,13 @@ def _check_for_temperature_override_removal():
 @bottle.post(API_ROOT + '/temperature/target', apply=[chestfreezer_call_decorator])
 def set_temperature_directly():   
     if _check_for_temperature_override_removal(): return  
-    target_temperature_C = _get_parameter_value("target_temperature_C")
+    instruction_target_temperature_C = _get_parameter_value("instruction_target_temperature_C")
     target_temperature_F = _get_parameter_value("target_temperature_F")
-    if (target_temperature_C is not None) & (target_temperature_F is not None):
+    if (instruction_target_temperature_C is not None) & (target_temperature_F is not None):
         abort(400, 'Either set the temperature in Celsius or Fahrenheit, but not both.')    
-    if target_temperature_F is not None: target_temperature_C = misc_utils.fahrenheit_to_celsius(float(target_temperature_F))
-    brew_logic.set_temperature_overwrite(float(target_temperature_C))
-    print 'Target temperature override set to ' + str(target_temperature_C) + 'C/' + str(misc_utils.celsius_to_fahrenheit(target_temperature_C)) + 'F'
+    if target_temperature_F is not None: instruction_target_temperature_C = misc_utils.fahrenheit_to_celsius(float(target_temperature_F))
+    brew_logic.set_temperature_overwrite(float(instruction_target_temperature_C))
+    print 'Target temperature override set to ' + str(instruction_target_temperature_C) + 'C/' + str(misc_utils.celsius_to_fahrenheit(instruction_target_temperature_C)) + 'F'
 
 @bottle.get(API_ROOT + '/temperature/target', apply=[chestfreezer_call_decorator])
 def get_target_temperature():
@@ -228,11 +228,11 @@ def delete_instruction(instruction_id):
 def create_instruction():
     if _get_parameter_value('instruction_id') is not None:
         abort(400, 'Instruction ID cannot be set directly.')
-    target_temperature_C = float(_get_parameter_value("target_temperature_C", True))
+    instruction_target_temperature_C = float(_get_parameter_value("instruction_target_temperature_C", True))
     from_timestamp = _get_timestamp_parameter('from_timestamp', True)
     to_timestamp = _get_timestamp_parameter('to_timestamp', True)
     description = _get_parameter_value('description')
-    new_instruction = Instruction(None, target_temperature_C, from_timestamp, to_timestamp, description)
+    new_instruction = Instruction(None, instruction_target_temperature_C, from_timestamp, to_timestamp, description)
     before_ids = db_adapter.get_all_instruction_ids()
     brew_logic.store_instruction_for_unique_time(new_instruction)
     after_ids = db_adapter.get_all_instruction_ids()    
@@ -246,8 +246,8 @@ def modify_instruction(instruction_id):
     if _get_parameter_value('instruction_id') is not None:
         abort(400, 'Instruction ID cannot be modified')    
     try:
-        if _get_parameter_value('target_temperature_C') is not None:
-                original_instruction.target_temperature_C = float(_get_parameter_value('target_temperature_C'))            
+        if _get_parameter_value('instruction_target_temperature_C') is not None:
+                original_instruction.target_temperature_C = float(_get_parameter_value('instruction_target_temperature_C'))            
         original_instruction.set_from_timestamp_safe(_get_timestamp_parameter('from_timestamp'))        
         original_instruction.set_to_timestamp_safe(_get_timestamp_parameter('to_timestamp'))        
         if _get_parameter_value('description') is not None:

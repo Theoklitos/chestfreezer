@@ -12,8 +12,9 @@ sys.path.append(os.path.abspath('..'))
 from util import configuration, misc_utils
 try:
     __import__('RPi')   
-except ImportError:
-    sys.exit('You don\'t have RPi installed. Try visiting https://pypi.python.org/pypi/RPi.GPIO')    
+except ImportError as e:
+    print 'Dependency error: ' + str(e)
+    sys.exit('You probably don\'t have RPi installed. Try visiting https://pypi.python.org/pypi/RPi.GPIO')    
 except RuntimeError:        
     # this is handled in the chestfreezer_gpio.py module, do nothing here
     pass    
@@ -28,8 +29,7 @@ if configuration.db_type() == configuration.DATABASE_IN_DISK_CONFIG_VALUE:
         sys.exit('You don\'t have the python mysql connector installed. Try apt-get install python-mysqldb')
 
 import urllib2
-from hardware import chestfreezer_gpio
-from hardware import temperature_probes
+from hardware import chestfreezer_gpio, temperature_probes
 from database import db_adapter
 import time
 import termios

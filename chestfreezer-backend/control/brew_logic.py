@@ -6,29 +6,30 @@ Controls the temperature based on readings and user instructions. Sort of like t
 @author: theoklitos
 '''
 import database.db_adapter 
-from hardware import chestfreezer_gpio, temperature_probes
+from hardware import chestfreezer_gpio
 from util import configuration, misc_utils, emailer
 import time
 from threading import Thread
+import hardware
 
 TEMPERATURE_MARGIN_C = 0.5
 
-target_temperature_C = None
+instruction_target_temperature_C = None
+temperature_override_C = None
 
 freezer_override = False
 freezer_state = False
 heater_override = False
 heater_state = False
-temperature_override_C = None
 
 instruction_thread_in_waiting = True
 current_instruction_id = None
 
 class Instruction():
     """ an instruction that dictates what the temperature(C) should be, and in which time period it should be so """
-    def __init__(self, instruction_id, target_temperature_C, from_timestamp, to_timestamp, description='No description given'):
+    def __init__(self, instruction_id, instruction_target_temperature_C, from_timestamp, to_timestamp, description='No description given'):
         self.instruction_id = str(instruction_id)
-        self.target_temperature_C = target_temperature_C
+        self.target_temperature_C = instruction_target_temperature_C
         self.from_timestamp = int(from_timestamp)
         self.to_timestamp = int(to_timestamp)
         if from_timestamp > to_timestamp: raise InstructionException
@@ -77,9 +78,9 @@ def start_instruction_thread():
                     instruction = instructions[0]
                     if (current_instruction_id != instruction.instruction_id):
                         current_instruction_id = instruction.instruction_id
-                        global target_temperature_C                        
-                        target_temperature_C = instruction.target_temperature_C
-                        print 'Applying instruction #' + instruction.instruction_id + ', setting target temperature to: ' + str(target_temperature_C) + "C"
+                        global instruction_target_temperature_C                        
+                        instruction_target_temperature_C = instruction.target_temperature_C
+                        print 'Applying instruction #' + instruction.instruction_id + ', setting target temperature to: ' + str(instruction_target_temperature_C) + "C"
                 elif len(instructions) == 0:
                     global current_instruction_id
                     current_instruction_id = None
@@ -157,21 +158,25 @@ class StopControlThread(Exception):
     """ when the control temperature thread must immediately iterate """
     pass
 
+def get_actual_target_temperature_C():
+    """ returns the current target temperature, regardless if it has been set by an override or a instruction """
+    if temperature_override_C is not None: return temperature_override_C
+    else: return instruction_target_temperature_C
+
 def start_temperature_control_thread():
     """ start the thread that monitors and control the devices in order to control the temperature """
     def control_temperature():        
         while True:                   
             try:
-                actual_target = target_temperature_C | temperature_override_C
-                print 'Control thread run for target ' + str(actual_target)
-                current_temperature_C = temperature_probes.get_current_temperature()
-                if _is_device_overriden() | (current_temperature_C is None) | (target_temperature_C is None): raise StopControlThread  # do nothing
+                actual_target_C = get_actual_target_temperature_C()                
+                current_temperature_C = hardware.temperature_probes.get_current_temperature()
+                if _is_device_overriden() | (current_temperature_C is None) | (actual_target_C is None): raise StopControlThread  # do nothing
                 # the great and efficient (not) algorithm!
-                if misc_utils.is_within_distance(current_temperature_C, target_temperature_C, TEMPERATURE_MARGIN_C):                     
+                if misc_utils.is_within_distance(current_temperature_C, actual_target_C, TEMPERATURE_MARGIN_C):                     
                     _set_heater(False); _set_freezer(False)                
-                elif current_temperature_C < target_temperature_C:
+                elif current_temperature_C < actual_target_C:
                     _set_heater(True); _set_freezer(False)
-                elif current_temperature_C > target_temperature_C:
+                elif current_temperature_C > actual_target_C:
                     _set_heater(False); _set_freezer(True)
             except StopControlThread as e:
                 # nothing, let loop re-iterate

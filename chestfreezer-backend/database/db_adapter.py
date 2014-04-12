@@ -75,7 +75,7 @@ def initialize_tables():
         cursor.execute(sql_statement);    
     if not does_table_exist(INSTRUCTIONS_TABLE_NAME):    
         # create temperature readings
-        sql_statement = "CREATE TABLE " + INSTRUCTIONS_TABLE_NAME + " (instruction_id INT AUTO_INCREMENT, target_temperature_C FLOAT(6,3), from_timestamp DATETIME, to_timestamp DATETIME, description TEXT, PRIMARY KEY(instruction_id))"        
+        sql_statement = "CREATE TABLE " + INSTRUCTIONS_TABLE_NAME + " (instruction_id INT AUTO_INCREMENT, instruction_target_temperature_C FLOAT(6,3), from_timestamp DATETIME, to_timestamp DATETIME, description TEXT, PRIMARY KEY(instruction_id))"        
         cursor.execute(sql_statement);
 
 def connect():    
@@ -108,10 +108,10 @@ def _store_instruction(instruction):
         if _is_memory_db():
             insert_sql = "INSERT INTO " + INSTRUCTIONS_TABLE_NAME + " VALUES ('" + str(instruction.instruction_id) + "','" + str(instruction.target_temperature_C) + "','" + from_timestamp + "','" + to_timestamp + "','" + instruction.description + "')"
         else:
-            insert_sql = "INSERT INTO " + INSTRUCTIONS_TABLE_NAME + " (target_temperature_C,from_timestamp,to_timestamp,description) VALUES ('" + str(instruction.target_temperature_C) + "','" + from_timestamp + "','" + to_timestamp + "','" + instruction.description + "')"
+            insert_sql = "INSERT INTO " + INSTRUCTIONS_TABLE_NAME + " (instruction_target_temperature_C,from_timestamp,to_timestamp,description) VALUES ('" + str(instruction.target_temperature_C) + "','" + from_timestamp + "','" + to_timestamp + "','" + instruction.description + "')"
         cursor.execute(insert_sql)        
     elif len(results) == 1:        
-        update_sql = "UPDATE " + INSTRUCTIONS_TABLE_NAME + " SET target_temperature_C='" + str(instruction.target_temperature_C) + "',from_timestamp='" + from_timestamp + "',to_timestamp='" + to_timestamp + "',description='" + instruction.description + "'"
+        update_sql = "UPDATE " + INSTRUCTIONS_TABLE_NAME + " SET instruction_target_temperature_C='" + str(instruction.target_temperature_C) + "',from_timestamp='" + from_timestamp + "',to_timestamp='" + to_timestamp + "',description='" + instruction.description + "'"
         cursor.execute(update_sql)
     db.commit()    
 
@@ -186,11 +186,11 @@ def get_temperature_readings(from_timestamp=1, to_timestamp=time.time()):
 def _cursor_row_to_instruction(row):
     """ gets the list from the given cursor row and creates an instruction object from it """    
     instruction_id = row[0]
-    target_temperature_C = row[1]    
+    instruction_target_temperature_C = row[1]    
     start_timestamp = _get_datetime(row[2])
     end_timestamp = _get_datetime(row[3])
     description = row[4]
-    instruction = control.brew_logic.Instruction(instruction_id, target_temperature_C, start_timestamp, end_timestamp, description)
+    instruction = control.brew_logic.Instruction(instruction_id, instruction_target_temperature_C, start_timestamp, end_timestamp, description)
     return instruction
 
 def _is_time_between(timestamp, from_timestamp, to_timestamp):
