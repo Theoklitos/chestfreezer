@@ -39,6 +39,7 @@ _should_log_security = True
 _should_send_emails = True
 _is_security_enabled = None
 
+
 def does_config_file_exist():
     return config_file is not None
 
