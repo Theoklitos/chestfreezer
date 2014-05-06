@@ -34,11 +34,11 @@ as unit timestamps can specify a range of readings.
 be maintained.
 * __POST /chestfrezer/api/temperature/target__ in order to set a temperature directly (also referred to as an override).
 
-* __GET /chestfrezer/api/temperature/instruction__, to get all the instructions. Instructions can also be time filtered by
-a _start_ and _end_ timestamp query parameters.
-* __POST /chestfrezer/api/temperature/instruction__, to create a new instruction.
-* __PUT /chestfrezer/api/temperature/instruction/{id}__, to update an existing instruction, and
-* __DELETE /chestfrezer/api/temperature/instruction/{id}__, to delete it.
+* __GET /chestfrezer/api/instruction__, to get all the instructions. Instructions can also be time filtered by
+a _start_ and _end_ timestamp query parameters. You can also use a _now_ query parameter to get the active one.
+* __POST /chestfrezer/api/instruction__, to create a new instruction.
+* __PUT /chestfrezer/api/instruction/{id}__, to update an existing instruction, and
+* __DELETE /chestfrezer/api/instruction/{id}__, to delete it.
 
 * __GET /chestfrezer/api/temperature/probe__, to get all the existing temperature sensors. A temp. sensor has an unique 
 hardware-bound ID and a settable name, and also a "master" boolean value that determines which is the probe that defines 
