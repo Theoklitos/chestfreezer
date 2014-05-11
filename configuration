@@ -3,7 +3,7 @@ freezer_pin = 5
 
 db_user = brewmaster
 db_password = h3f3w3iz3n
-db_type = memory
+db_type = disk
 
 security_enabled = True
 

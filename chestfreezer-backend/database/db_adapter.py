@@ -12,24 +12,31 @@ import hardware.temperature_probes
 import sqlite3
 import sys
 import time
-import threading
 import control.brew_logic
 from util import misc_utils
 
 cursor = None
 db = None
+lock_object = False
 
 TEMPERATURE_READINGS_TABLE_NAME = 'temperature_readings'
 PROBES_TABLE_NAME = 'probes'
 INSTRUCTIONS_TABLE_NAME = 'instructions'
     
 def synchronized(func):
-    """ synchronized method decorator, from http://theorangeduck.com/page/synchronized-python """
-    func.__lock__ = threading.Lock()            
-    def synced_func(*args, **kws):
-        with func.__lock__:
-            return func(*args, **kws)
-    return synced_func
+    """ synchronized method decorator, from http://theorangeduck.com/page/synchronized-python """           
+    #func.__lock__ = threading.Lock()            
+    def cursor_and_lock_check(*args, **kws):
+        global lock_object
+        global cursor
+        while lock_object: time.sleep(0.1)                
+        lock_object = True
+        cursor = db.cursor()
+        returnValue = func(*args, **kws)
+        cursor.close()
+        lock_object = False
+        return returnValue
+    return cursor_and_lock_check
 
 def _is_memory_db():
     """returns true if the database is only in-memory (sqlite3). Otherwise itc can be assumed that MySQL is being used """
@@ -40,6 +47,7 @@ def _is_memory_db():
 
 def drop_tables(should_drop_probes_too=True):
     """ drops (almost) all the tables used in the app's db """
+    cursor = db.cursor()    
     try:
         cursor.execute("DROP TABLE " + TEMPERATURE_READINGS_TABLE_NAME)
     except:
@@ -58,6 +66,7 @@ def drop_tables(should_drop_probes_too=True):
         # likewise
     db.commit()    
 
+@synchronized
 def does_table_exist(table_name):
     """ self-explanatory """
     if _is_memory_db():
@@ -66,8 +75,9 @@ def does_table_exist(table_name):
         return cursor.execute("SHOW TABLES LIKE '" + table_name + "'") == 1            
 
 def initialize_tables():
-    """ initializes the 3 required tables """
+    """ initializes the 3 required tables """    
     # check if tables exist, init the database
+    cursor = db.cursor()
     if not does_table_exist(PROBES_TABLE_NAME):
         cursor.execute("CREATE TABLE " + PROBES_TABLE_NAME + " (probe_id VARCHAR(12), name VARCHAR(100), master BOOLEAN, PRIMARY KEY(probe_id))");        
     if not does_table_exist(TEMPERATURE_READINGS_TABLE_NAME):    
@@ -80,21 +90,20 @@ def initialize_tables():
 
 def connect():    
     global db
-    global cursor
+    global cursor    
     if _is_memory_db():
-        db = sqlite3.connect(':memory:', check_same_thread=False)            
-        cursor = db.cursor()
+        db = sqlite3.connect(':memory:', check_same_thread=False)
         print 'Using sqlite3 in-memory database.'        
     else:            
-        db = MySQLdb.connect(host=configuration.db_host(), user=configuration.db_user(), passwd=configuration.db_pwd(), db=configuration.db_name())    
-        cursor = db.cursor()
+        db = MySQLdb.connect(host=configuration.db_host(), user=configuration.db_user(), passwd=configuration.db_pwd(), db=configuration.db_name())
         print 'Using MySQL database.'
-    
+    cursor = db.cursor()
     if 'drop' in sys.argv:
         print 'Will drop all tables...',
         drop_tables()
         print 'done.'
     initialize_tables()
+    cursor.close()
 
 @synchronized
 def _store_instruction(instruction):
@@ -162,20 +171,20 @@ def get_all_instruction_ids():
 
 @synchronized
 def get_temperature_readings(from_timestamp=1, to_timestamp=time.time()):
-    """ returns all the temperature readings from/upto the given timestamps """    
+    """ returns all the temperature readings from/upto the given timestamps """        
     found_temperature_readings = []
     sql_statement = None
     if _is_memory_db():                
-        # i can't seem to compare dates in sqlite3 directly
+        # i can't seem to compare dates in sqlite3 directly        
         sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME
     else:
-        sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME + " WHERE timestamp BETWEEN from_unixtime(" + str(from_timestamp) + ") and from_unixtime(" + str(to_timestamp) + ")"
+        sql_statement = "SELECT * FROM " + TEMPERATURE_READINGS_TABLE_NAME + " WHERE timestamp BETWEEN from_unixtime(" + str(from_timestamp) + ") and from_unixtime(" + str(to_timestamp) + ")"    
     cursor.execute(sql_statement);
-    all_results = cursor.fetchall()    
-    for result in all_results:
+    all_results = cursor.fetchall()        
+    for result in all_results:         
         probe_id = result[0]
-        temperature_C = result[1]           
-        timestamp = _get_datetime(result[2])
+        temperature_C = result[1]                
+        timestamp = _get_datetime(result[2])        
         temperature_reading = hardware.temperature_probes.TemperatureReading(probe_id, temperature_C, timestamp)
         # dates must be compared "manually" if we are using sqlite3        
         should_add = (not _is_memory_db()) | (_is_memory_db() & (timestamp >= int(from_timestamp)) & (timestamp <= int(to_timestamp)))
@@ -201,8 +210,7 @@ def _is_time_between(timestamp, from_timestamp, to_timestamp):
 def get_instructions(from_timestamp=time.time(), to_timestamp=time.time()):
     """ reads the instructions table and returns all the instructions that would be valid for the given time """
     found_instructions = []
-    sql_statement = "SELECT * FROM " + INSTRUCTIONS_TABLE_NAME
-    while not control.brew_logic.instruction_thread_in_waiting: time.sleep(0.1)    
+    sql_statement = "SELECT * FROM " + INSTRUCTIONS_TABLE_NAME    
     cursor.execute(sql_statement);
     all_results = cursor.fetchall()
     for result in all_results:
@@ -235,19 +243,23 @@ def get_all_probes():
 
 @synchronized
 def get_instruction_by_id(instruction_id):
-    for instruction in get_all_instructions():
+    for instruction in _get_all_instructions_unsynchronized():
         if instruction.instruction_id == instruction_id: return instruction
-        
-@synchronized        
-def get_all_instructions():
-    """ returns all the instructions """
-    all_instructions = []
-    cursor.execute("SELECT * FROM " + INSTRUCTIONS_TABLE_NAME)
+
+def _get_all_instructions_unsynchronized():
+    """ returns all the instructions, without cursor sync """
+    all_instructions = []        
+    cursor.execute("SELECT * FROM " + INSTRUCTIONS_TABLE_NAME)    
     all_results = cursor.fetchall()    
     for result in all_results:
         instruction = _cursor_row_to_instruction(result)
         all_instructions.append(instruction)
     return all_instructions
+        
+@synchronized        
+def get_all_instructions():
+    """ returns all the instructions, """
+    return _get_all_instructions_unsynchronized()
 
 @synchronized
 def delete_instruction(instruction_id):

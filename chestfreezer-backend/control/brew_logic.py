@@ -32,7 +32,7 @@ class Instruction():
         self.target_temperature_C = instruction_target_temperature_C
         self.from_timestamp = int(from_timestamp)
         self.to_timestamp = int(to_timestamp)
-        if from_timestamp > to_timestamp: raise InstructionException
+        if from_timestamp > to_timestamp: raise InstructionException('Start date cannot be after end date')
         self.description = description        
         
     def __str__(self):        
@@ -51,7 +51,7 @@ class Instruction():
         """ if the 'to_timestamp' value is None or somehow malformed, will not set it """
         try:
             if value is not None:
-                self.from_timestamp = int(value)
+                self.to_timestamp = int(value)
         except:
             # do nothing, value will not have changed
             pass
@@ -112,7 +112,7 @@ def store_instruction_for_unique_time(instruction):
     results = database.db_adapter.get_instructions(instruction.from_timestamp, instruction.to_timestamp)
     if len(results) == 0: database.db_adapter._store_instruction(instruction)    
     elif (not ((len(results) == 1) & (results[0].instruction_id == instruction.instruction_id))) | (len(results) > 1):
-        raise InstructionException
+        raise InstructionException('Instruction overlaps with one or more existing instructions')
     else: database.db_adapter._store_instruction(instruction)    
 
 def _set_heater(should_activate):
