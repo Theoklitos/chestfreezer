@@ -407,7 +407,7 @@ def static_files(path):
     
 def start():
     def start_on_different_thread():        
-        bottle.run(host='localhost', port=configuration.port())
+        bottle.run(host='0.0.0.0', port=configuration.port())
     global web_run_thread
     web_run_thread = Thread(target=start_on_different_thread, args=())
     web_run_thread.daemon = True
