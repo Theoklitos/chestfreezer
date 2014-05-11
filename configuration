@@ -1,8 +1,6 @@
 heater_pin = 3
 freezer_pin = 5
 
-db_user = 
-db_password = 
 db_type = disk
 
 security_enabled = True
@@ -11,8 +9,8 @@ instruction_check_interval_time_seconds = 60
 temperature_store_interval_time_seconds = 5
 monitor_temperature_interval_time_seconds = 5
 
-emails_to_notify = 
-emails_to_warn = 
+emails_to_notify = thechristodoulou@gmail.com
+emails_to_warn = thechristodoulou@gmail.com
 
 port = 8080
 
