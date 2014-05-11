@@ -1,0 +1,10 @@
+<div class="status-text">
+	{{deviceName}} Status: <span class="{{getStatusColorClass status}}">{{getStatusText status}}</span>
+</div>
+<div class="status-selector">
+	<select id="freezer-selector">
+		<option value="AUTO" {{isStatusSelected "overridden" status}}>Auto</option>
+		<option value="ON" {{isStatusSelected "on" status}}>On</option>
+		<option value="OFF" {{isStatusSelected "off" status}}>Off</option>
+	</select>
+</div>

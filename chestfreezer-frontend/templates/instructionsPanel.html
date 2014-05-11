@@ -1,0 +1,64 @@
+<div class="col-md-8 col-md-offset-2 content-row">
+	<div id="row">
+		<div class="col-md-8">
+			<div class="table-responsive">
+				<table id="instructions-table"
+					class="table .table-hover table-condensed">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Target Temperature</th>
+							<th>Description</th>
+							<th>From</th>
+							<th>Until</th>
+						</tr>
+					</thead>
+					<tbody id='instructions-table-body'>
+						{{#each instructions}}
+						<tr class="{{isActiveInstruction instruction_id}}">
+							<td class="id-cell">{{ instruction_id }}</td>
+							<td>{{ target_temperature_C }}</td>
+							<td>{{ description }}</td>
+							<td>{{ prettyDate from_timestamp }}</td>
+							<td>{{ prettyDate to_timestamp }}</td>
+						</tr>
+						{{/each}}
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="col-md-4">
+			<form role="form">
+				<div class="form-group">
+					<label for="targetTemperature">Target Temperature (Celsius)</label>
+					<input type="text" class="form-control" id="targetTemperature"
+						placeholder="Enter Celsius Temperature...">
+				</div>
+				<div class="form-group">
+					<label for="description">Description</label> <input type="textarea"
+						class="form-control" id="description"
+						placeholder="Describe the point of this instruction...">
+				</div>
+				<div class="form-group">
+					<label for="datetime-from">From</label>
+					<div class='input-group date' id='datetime-from'>
+						<input type='text' id='datetime-from-value' class="form-control"
+							placeholder="Start Date..."> <span
+							class="input-group-addon"><span
+							class="glyphicon glyphicon-calendar"></span></span>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="datetime-to">Until</label>
+					<div class='input-group date' id='datetime-to'>
+						<input type='text' id='datetime-to-value' class="form-control"
+							placeholder="End Date..." /> <span class="input-group-addon"><span
+							class="glyphicon glyphicon-calendar"></span></span>
+					</div>
+				</div>
+				<button id="save-instruction" class="btn btn-default">Save</button>
+				<button id="delete-instruction" class="btn btn-default">Delete</button>
+			</form>
+		</div>
+	</div>
+</div>

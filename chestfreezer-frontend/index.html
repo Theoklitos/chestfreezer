@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>	
+  	<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Chestfreezer</title>	
+	<link rel="shortcut icon" href="images/favicon.ico">	
+	
+	<script data-main="scripts/chestfreezer" src="scripts/lib/require.js"></script>
+			
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css"/>
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css"/>
+	<link rel="stylesheet" href="styles/bootstrap-datetimepicker.min.css" />
+	<link rel="stylesheet" href="styles/chestfreezer.css" />	
+</head>
+
+<body>
+	<div id="login-form" class="container-fluid"></div>	
+	
+	<div id="main-page" class="container-fluid" style="display: none">
+		<div class="row">
+			<div class="col-md-12">
+				<div id="header" class="page-header chestfreezer-colored"></div>
+   			</div>
+		</div>	
+				
+		<div id="temperature-header" class="row">		
+			<div class="col-md-4">
+				<div id="temperature-chart" style="height: 300px; width: 100%;"></div>
+			</div>			
+			<div class="col-md-4">
+				<div id="temperature-gauge"></div>
+			</div>
+			<div class="col-md-4">
+				<div id="status">
+					<div class="status-text">
+						<div id="temperature-reading">Current Temperature: <strong>N/A</strong></div>
+						<div id="temperature-control">
+							<div id="target-temperature-checkbox-container" class="checkbox">
+								<input id="taget-temperature-checkbox" type="checkbox">Set temperature directly
+								<input id="taget-temperature-textfield" type="text" size="2"/>			
+								<input id="taget-temperature-button" type="button" value="Set">
+							</div>							
+						</div>
+					</div>
+					<div id="freezer-status"></div>
+					<div id="heater-status"></div>
+					<div id="active-instruction"></div>
+				</div>
+			</div>
+		</div>				
+	</div>
+		<div id="error-message-panel" class="row"><p id="error-message"></p></div>		
+		<nav id="navigation-bar">
+		<ul class="nav nav-pills nav-justified chestfreezer-colored">            
+			<li id="instruction-menu-button" class="chestfreezer-menu-button"><a href="#">Instructions</a></li>							
+			<li id="probe-menu-button" class="chestfreezer-menu-button"><a href="#">Probe Control</a></li>			
+			<li id="log-menu-button" class="chestfreezer-menu-button"><a href="#">Log</a></li>
+		</ul>
+		</nav>
+		
+		<div id="content" class="row"></div>
+		
+	</div>	
+	
+</body>
+</html>
+

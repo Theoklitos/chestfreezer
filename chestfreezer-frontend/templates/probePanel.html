@@ -1,0 +1,26 @@
+<div class="col-md-6 col-md-offset-3 content-row">
+	<div class="row">
+		<div class="table-responsive">
+			<table id="instructions-table" class="table .table-hover table-condensed">
+				<thead>
+					<tr>
+						<th>Probe Hardware ID</th>
+						<th>Probe Name</th>
+						<th>Master</th>						
+					</tr>
+				</thead>
+				<tbody id='instructions-table-body'>
+					{{#each probes}}					
+						<td>{{ probe_id }}</td>
+						<td>{{ name }}</td>
+						<td>{{ master }}</td>						
+					</tr>
+					{{/each}}
+				</tbody>
+			</table>
+		</div>		
+	</div>
+	<div class="row update-probe-button-row">
+		<input id="update-probe-button" type="button">Update 
+	</div>
+</div>

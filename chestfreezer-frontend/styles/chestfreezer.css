@@ -1,0 +1,99 @@
+.table-highlight {
+	background: #428bca !important; 
+	color: white !important; 
+}
+
+.table-active-highlight {
+	background: red;
+	color: white; 
+}
+
+#target-temperature-checkbox-container {
+	font-size: 15px;
+}
+
+#instructions-table tbody tr:hover {
+	background: #88bfc4;
+	color: #0a555c
+}
+
+.logout-button-container {	
+	bottom: 40px;	
+	right: 10px;
+    position: relative;    
+}
+
+.chestfreezer-colored {
+	background: #88bfc4;
+	color: #0a555c;
+	border: 1px solid #0e7079;
+}
+
+.chestfreezer-colored a {
+	color: #0a555c;
+}
+
+.form-signin .form-control {
+	margin: 10px 0px;
+}
+
+#error-message-panel, .log-checkbox-row {
+	text-align: center;
+}
+
+#login-button {
+	background: #88bfc4;
+	border-color: #88bfc4;
+}
+
+.page-header {
+	margin: 0px;
+	padding-left: 10px;
+}
+
+#log-textarea {
+	resize: none;
+	width:100%;
+	font-family: Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+    height: 200px;
+    max-height: 200px;  
+}
+
+#active-instruction {
+	padding-top: 10px;
+}
+
+#status {
+	padding-top: 20px;
+}
+
+.status-text {
+	display: inline-block;
+	font-size: 20px;
+	margin: 10px 0px;
+}
+
+.status-selector {
+	display: inline-block;
+	position: relative;
+}
+
+#heater-selector, #freezer-selector {
+	position: absolute;
+	top: -22px;
+	padding: 3px;
+	left: 10px;
+}
+
+.content-row {
+	margin-top: 10px;
+}
+
+.blue-color {	
+	color: blue;
+}
+
+.red-color {	
+	color: red;
+}
+
