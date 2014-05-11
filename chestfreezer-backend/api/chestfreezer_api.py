@@ -150,7 +150,7 @@ def chestfreezer_call_decorator(fn):
     def wrapper_function(*args, **kwargs):
         _do_auth_check()
         try:
-            return enable_cors(fn(*args, **kwargs));
+            return fn(*args, **kwargs);
         except HTTPError as e:                        
             _log_and_escalate(e.status, e.output)
             raise e
@@ -162,7 +162,7 @@ def chestfreezer_call_decorator(fn):
 
 
 ########################## TEMPERATURES #################################################################################
-@bottle.get(API_ROOT + '/temperature', apply=[chestfreezer_call_decorator])
+@bottle.get(API_ROOT + '/temperature', apply=[chestfreezer_call_decorator, enable_cors])
 def get_temperatures():              
     start_timestamp, end_timestamp = _get_timestamp_query_parameters()
     try:        
@@ -186,7 +186,7 @@ def _check_for_temperature_override_removal():
         elif override:
             abort(400, '"override" value cannot be set to "true" directly')        
 
-@bottle.post(API_ROOT + '/temperature/target', apply=[chestfreezer_call_decorator])
+@bottle.post(API_ROOT + '/temperature/target', apply=[chestfreezer_call_decorator, enable_cors])
 def set_temperature_directly():   
     if _check_for_temperature_override_removal(): return  
     target_temperature_C = _get_parameter_value("target_temperature_C")    
@@ -198,7 +198,7 @@ def set_temperature_directly():
     print 'Target temperature override set to ' + str(target_temperature_C) + 'C/' + str(misc_utils.celsius_to_fahrenheit(float(target_temperature_C))) + 'F'
     response.status = 204
 
-@bottle.get(API_ROOT + '/temperature/target', apply=[chestfreezer_call_decorator])
+@bottle.get(API_ROOT + '/temperature/target', apply=[chestfreezer_call_decorator, enable_cors])
 def get_target_temperature():
     responseJson = json_parser.get_target_temperature_json()
     if not responseJson:
@@ -217,7 +217,7 @@ def _get_instruction(instruction_id):
         abort(404, 'Instruction with ID ' + instruction_id + ' does not exist.')
     return result
 
-@bottle.get(API_ROOT + '/instruction', apply=[chestfreezer_call_decorator])
+@bottle.get(API_ROOT + '/instruction', apply=[chestfreezer_call_decorator, enable_cors])
 def get_instructions():    
     if not request.query_string:        
         print 'Returning all instructions...'
@@ -240,19 +240,19 @@ def get_instructions():
     except (TypeError, ValueError) as e:
         abort(400, "Malformed timestamp parameter(s): " + str(e))
     
-@bottle.get(API_ROOT + '/instruction/<instruction_id>', apply=[chestfreezer_call_decorator])
+@bottle.get(API_ROOT + '/instruction/<instruction_id>', apply=[chestfreezer_call_decorator, enable_cors])
 def get_instruction(instruction_id):
     instruction = _get_instruction(instruction_id)
     return json_parser.get_instruction_as_json(instruction)
 
-@bottle.delete(API_ROOT + '/instruction/<instruction_id>', apply=[chestfreezer_call_decorator])
+@bottle.delete(API_ROOT + '/instruction/<instruction_id>', apply=[chestfreezer_call_decorator, enable_cors])
 def delete_instruction(instruction_id):
     _get_instruction(instruction_id)  # just check if it exists
     db_adapter.delete_instruction(instruction_id)
     print 'Deleted instruction #' + instruction_id
     response.status = 204
 
-@bottle.post(API_ROOT + '/instruction', apply=[chestfreezer_call_decorator])
+@bottle.post(API_ROOT + '/instruction', apply=[chestfreezer_call_decorator, enable_cors])
 def create_instruction():
     if _get_parameter_value('instruction_id') is not None:
         abort(400, 'Instruction ID cannot be set directly.')
@@ -272,7 +272,7 @@ def create_instruction():
         response.status = 400
         return str(e) # this is the correct way to return errors it seems
 
-@bottle.put(API_ROOT + '/instruction/<instruction_id>', apply=[chestfreezer_call_decorator])
+@bottle.put(API_ROOT + '/instruction/<instruction_id>', apply=[chestfreezer_call_decorator, enable_cors])
 def modify_instruction(instruction_id):
     print 'Updating instruction #' + instruction_id + '...'
     original_instruction = _get_instruction(instruction_id)
@@ -300,12 +300,12 @@ def modify_instruction(instruction_id):
         
 
 ########################## PROBES #################################################################################
-@bottle.get(API_ROOT + '/probe', apply=[chestfreezer_call_decorator])
+@bottle.get(API_ROOT + '/probe', apply=[chestfreezer_call_decorator, enable_cors])
 def get_all_probes():
     response.content_type = 'application/json;' 
     return json_parser.get_probe_array_as_json(db_adapter.get_all_probes())
 
-@bottle.get(API_ROOT + '/probe/<probe_id>', apply=[chestfreezer_call_decorator])
+@bottle.get(API_ROOT + '/probe/<probe_id>', apply=[chestfreezer_call_decorator, enable_cors])
 def get_probe(probe_id):
     probe = db_adapter.get_probe_by_id(probe_id)
     if probe is None:
@@ -314,7 +314,7 @@ def get_probe(probe_id):
         response.content_type = 'application/json;' 
         return json_parser.get_probe_as_json(probe)
 
-@bottle.put(API_ROOT + '/probe/<probe_id>', apply=[chestfreezer_call_decorator])
+@bottle.put(API_ROOT + '/probe/<probe_id>', apply=[chestfreezer_call_decorator, enable_cors])
 def set_probe(probe_id):
     probe = db_adapter.get_probe_by_id(probe_id)
     if probe is None:
@@ -338,12 +338,12 @@ def set_probe(probe_id):
 
 
 ########################## DEVICES #################################################################################
-@bottle.get(API_ROOT + '/device', apply=[chestfreezer_call_decorator])
+@bottle.get(API_ROOT + '/device', apply=[chestfreezer_call_decorator, enable_cors])
 def get_all_devices_state():
     response.content_type = 'application/json;' 
     return json_parser.get_both_devices_json()
     
-@bottle.get(API_ROOT + '/device/<device_name>', apply=[chestfreezer_call_decorator])
+@bottle.get(API_ROOT + '/device/<device_name>', apply=[chestfreezer_call_decorator, enable_cors])
 def get_device_state(device_name):
     response.content_type = 'application/json;' 
     if _is_freezer(device_name):
@@ -353,7 +353,7 @@ def get_device_state(device_name):
     else: 
         abort(400, 'Device "' + device_name + '" is unrecognized. Please use "heater" or "freezer"')    
 
-@bottle.post(API_ROOT + '/device/<device_name>', apply=[chestfreezer_call_decorator])
+@bottle.post(API_ROOT + '/device/<device_name>', apply=[chestfreezer_call_decorator, enable_cors])
 def set_device_state(device_name):    
     state = None
     if _does_parameter_have_value('state', ['on', 'ON', 'On', 'True', 'true', 'TRUE']):
