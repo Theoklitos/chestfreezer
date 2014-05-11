@@ -148,9 +148,9 @@ def _get_timestamp_query_parameters():
 def chestfreezer_call_decorator(fn):
     """ the decorator that handles exceptions and security, applied to all calls """    
     def wrapper_function(*args, **kwargs):
-        _do_auth_check()    
+        _do_auth_check()
         try:
-            return fn(*args, **kwargs);
+            return enable_cors(fn(*args, **kwargs));
         except HTTPError as e:                        
             _log_and_escalate(e.status, e.output)
             raise e
