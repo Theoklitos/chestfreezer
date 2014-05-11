@@ -67,13 +67,14 @@ function fetchTemperatures(api, model, view, utils, startMillis, endMillis) {
  * initializes the chart, and setup the temperature data array that the chart can read
  */
 function initializeChart(model, view) {
-	for ( var n in model.probes) {
-		probe = model.probes[n];
+	model.chartData = [];
+	for (var n in model.probes) {
+		var probe = model.probes[n];
 		if (probe.master == "True") {
 			probeName = probe.name + "(master)";
 		} else {
 			probeName = probe.name;
-		}
+		}		
 		model.chartData.push({
 			type : "line",
 			xValueType : "dateTime",
@@ -236,6 +237,33 @@ function setProbeEvents(api, view, model, utils, log) {
 			view.showProbes(model.probes);
 		});
 		return false;
+	});	
+	$(document).on('click', 'input.master-checkbox', function(event) {		
+	    $('input.master-checkbox').removeAttr('checked');	    
+	    $(event.target).prop('checked', true);
+	});
+	$(document).on('click', '#update-probe-button', function() {
+		var atLeastOneChange = false;
+		probeList = view.getProbesFromTable();
+		if(!utils.isAnyProbeMaster(probeList)) {
+			view.alert('Error: At least one probe must be set to master!');
+			return;
+		}
+		for(n in probeList) {
+			probeFromTable = probeList[n];
+			if(utils.hasChanged(probeFromTable)) {				
+				api.updateProbe(probeFromTable);
+				atLeastOneChange = true;
+			} 
+		}
+		if(atLeastOneChange) { // refresh probe view if an update has occurred			
+			api.updateProbeInfo(function() {
+				view.showProbes(model.probes);
+				initializeChart(model, view);
+				view.alert('Probe(s) updated succesfully');
+				log.log('Updated probes')
+			});			
+		}
 	});
 }
 
@@ -303,7 +331,7 @@ function main(domReady, utils, api, model, config, view, log) {
 		initializeChart(model, view);
 	});
 	updateDeviceInfo(api, view, model);
-	// fetchTemperatures(api, model, view, utils, 0, utils.getCurrentUnixTimestamp());
+	//fetchTemperatures(api, model, view, utils, 0, utils.getCurrentUnixTimestamp());
 	view.initializeGauge();
 
 	log.log('Data initialized');
@@ -315,7 +343,7 @@ function main(domReady, utils, api, model, config, view, log) {
 	startTemperatureUpdateThread(api, view, model, utils, config, log);
 	startInstructionAndTargetTemperatureUpdateThread(api, view, model, config, log);
 	
-	log.log('Main function end');
+	log.log('Main function end');	
 }
 
 /*

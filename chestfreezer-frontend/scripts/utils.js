@@ -34,10 +34,20 @@ define([ 'jquery', 'Base64', 'model' ], function($, Base64, model) {
 		 * matches a probe_id to a probe_name in the model
 		 */
 		getProbeNameForProbeId : function(probeId) {
+			var result = this.getProbeForId(probeId);
+			if(result != undefined) {
+				return result.name;
+			}
+		},
+		
+		/*
+		 * matches a probe_id to a probe in the model
+		 */
+		getProbeForId : function(probeId) {
 			for ( var n in model.probes) {
 				probe = model.probes[n];
 				if (probe.probe_id == probeId) {
-					return probe.name;
+					return probe;
 				}
 			}
 		},
@@ -59,6 +69,31 @@ define([ 'jquery', 'Base64', 'model' ], function($, Base64, model) {
 		 */
 		capitaliseFirstLetter : function(string) {
 			return string.charAt(0).toUpperCase() + string.slice(1);
+		},
+		
+		/*
+		 * returns true if at least one probe is set to be the master
+		 */
+		isAnyProbeMaster : function(probeList) {
+			for(var n in probeList) {
+				probe = probeList[n];
+				if(probe.master == 'True') {
+					return true;
+				}
+			}
+			return false;
+		},
+		
+		/*
+		 * checks if there exists another probe with the same id in the model, and if so, returns
+		 * true if its internal state is different
+		 */
+		hasChanged : function(probe) {			
+			var found = this.getProbeForId(probe.probe_id)			
+			if(found == undefined) {
+				return false;
+			}			
+			return ! (found.name == probe.name && found.master == probe.master);
 		},
 		
 		/*

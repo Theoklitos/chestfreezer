@@ -141,6 +141,19 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 		},
 		
 		/*
+		 * calls the backend to update the data of the given probe 
+		 */
+		updateProbe : function(probe) {
+			formData = 'name=' + probe.name + '&master=' + probe.master;
+			console.log('updating probe with: ' + formData)
+			this.makeAjaxCallToBackend('PUT', '/probe/' + probe.probe_id, true, function() {
+				// do nothing on success, probes are updated in batches
+			}, function(xhr, status, error) {
+				view.alert('Could not update probe: ' + xhr.responseText + ".");
+			}, formData);
+		},
+		
+		/*
 		 * PUTs data to update an instruction
 		 */
 		updateInstruction : function(formData, instruction_id) {

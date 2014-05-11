@@ -1,8 +1,8 @@
 /*
  * Various methods that connect to the view of the app
  */
-define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handlebars', 'hbs!/templates/login', 'hbs!/templates/header', 'hbs!/templates/device', 
-        'hbs!/templates/instructionsPanel', 'hbs!/templates/probePanel', 'hbs!/templates/logPanel'], 
+define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handlebars', 'hbs!../templates/login', 'hbs!../templates/header', 'hbs!../templates/device', 
+        'hbs!../templates/instructionsPanel', 'hbs!../templates/probePanel', 'hbs!../templates/logPanel'], 
 		function($, logger, utils, bootbox, chartjs, canvasjs, Handlebars, login, header, device, instructions, probes, log) {
   return {
 	  
@@ -143,10 +143,10 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 	  handleError : function(errorMessage) {
 		  logger.log('Error: ' + errorMessage);	  	
 		  $("#error-message-panel").addClass("alert alert-danger");
-		  $("#error-message").text('<strong>' + errorMessage + '</strong>');
+		  $("#error-message").html('<strong>' + errorMessage + '</strong>');
 		  setTimeout(function() {
 			  $("#error-message-panel").removeClass("alert alert-danger");
-			  $("#error-message").text('');
+			  $("#error-message").html('');
 		  }, 5000);	  	
 	  },
 	  
@@ -223,15 +223,37 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 	  },
 	  
 	  /*
+	   * returns a number of probe objects contructed from the data in the probe table
+	   */
+	  getProbesFromTable : function() {
+		  result = [];
+		  $('#probes-table-body tr').each(function() {
+			  tds = $(this).children('td'); // children array
+			  var isMaster = 'False';
+			  if(tds[2].firstChild.checked) {
+				  isMaster = 'True';
+			  }
+			  tableProbe = {
+					  probe_id : tds[0].textContent,
+					  name : tds[1].textContent,
+					  master : isMaster,
+			  }			  
+			  result.push(tableProbe)			  		      
+		  });
+		  return result;
+	  },
+	  
+	  /*
 	   * displays the log panel 
 	   */
-	  showLog: function() {		  
+	  showLog: function() {
+		  reference = this;
 		  if($('#log-menu-button').hasClass('active')) {
 			  var template = log();		   
 			  $('#content').html(template);			  
 			  this.setLogTextareaText(logger.getAll());
 			  this.showLogInterval = setInterval(function() {
-				  this.refreshLog();
+				  reference.refreshLog();
 			  }, 1000);
 		  }		  
 	  },

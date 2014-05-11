@@ -37,7 +37,7 @@
 	margin: 10px 0px;
 }
 
-#error-message-panel, .log-checkbox-row {
+#error-message-panel, .log-checkbox-row, .update-probe-button-row{
 	text-align: center;
 }
 

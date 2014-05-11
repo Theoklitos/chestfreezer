@@ -331,7 +331,8 @@ def set_probe(probe_id):
                 print 'Probe ' + probe_id + ' is now the master probe.'
             else: 
                 temperature_probes.set_probe_as_not_master(probe_id)
-                print 'Probe ' + probe_id + ' is no longer the master probe.'
+                print 'Probe ' + probe_id + ' is no longer the master probe.'                
+    response.status = 204
 ####################################################################################################################
 
 

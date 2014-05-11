@@ -20,8 +20,7 @@ two timestamps (start, end) that define the time interval in which we wish this 
 
 Temperature Algorithm
 ---------------------
-Nothing yet. The idea is to turn on the freezer if its warm, or turn on the cooler if its hot. Of course this is
-very inefficient and should be amended in the future.
+The idea is to turn on the freezer if its warm, or turn on the cooler if its hot, with one or two degrees as a buffer.
 
 
 API
@@ -53,8 +52,8 @@ Access control is a single username/password in the config file that is matched 
 
 Frontend
 --------
-There will be a simple javascript frontend using HTML5 graphs and some jQuery to visualize the data and control the sensors.
-For the time being there is nothing... use curl :(
+A small javascript single page app that uses requirejs, bootstrap and handlebars and some canvasjs graphs polls the server for
+temperature updates and also controls the devices.
 
 
 Configuration

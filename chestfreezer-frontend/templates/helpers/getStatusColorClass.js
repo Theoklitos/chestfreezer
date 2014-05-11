@@ -4,12 +4,13 @@ define(['hbs/handlebars'], function(Handlebars) {
 	 * returns the appropriate colour (red or blue) based on the device state
 	 */
 	function getStatusColorClass(device, options) {
+		var style = "";
 		if(device.state == 'off') {
-			return "red-color";
+			style = "red-color";
 		} else if(device.state == 'on') {
-			return "blue-color";
+			style = "blue-color";
 		}		
-		return "";
+		return style;
 	}	
 	
 	Handlebars.registerHelper('getStatusColorClass', getStatusColorClass);	
