@@ -1,7 +1,7 @@
 /*
  * Various helper/utility functions  
  */
-define([ 'jquery', 'Base64', 'model' ], function($, Base64, model) {
+define([ 'jquery', 'Base64', 'model', 'moment' ], function($, Base64, model, moment) {
 	return {
 		/*
 		 * returns encoded basic auth credentials, ready to be put into the header
@@ -149,13 +149,13 @@ define([ 'jquery', 'Base64', 'model' ], function($, Base64, model) {
 		evaluateInstructionFormAndGetData : function() {
 			targetTemperature = $('#targetTemperature').val();
 			description = $('#description').val();
-			datetimeFrom = $('#datetime-from-value').val();
+			datetimeFrom = $('#datetime-from-value').val();			
 			datetimeTo = $('#datetime-to-value').val();
 			if (!targetTemperature || !datetimeFrom || !datetimeTo) {
-				throw new Exception('Missing instruction value(s)!');
+				throw 'Missing instruction value(s)!';
 			}
-			fromTimestamp = new Date(datetimeFrom).getTime() / 1000;
-			toTimestamp = new Date(datetimeTo).getTime() / 1000;
+			fromTimestamp = moment(datetimeFrom, 'DD/MM/YYYY h:mm A').unix();
+			toTimestamp = moment(datetimeTo, 'DD/MM/YYYY h:mm A').unix();			
 			return 'target_temperature_C=' + targetTemperature + '&description=' + description + '&from_timestamp='
 					+ fromTimestamp + '&to_timestamp=' + toTimestamp;
 		}

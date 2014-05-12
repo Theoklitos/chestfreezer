@@ -169,9 +169,8 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 		  $('.chestfreezer-menu-button').removeClass('active');
 		  $(button).toggleClass('active');		  
 		  // to avoid zombie events
-		  $( ".bootstrap-datetimepicker-widget dropdown-menu" ).remove(); 
-		  clearInterval(this.showLogInterval);
-		  
+		  $('.bootstrap-datetimepicker-widget').remove(); 
+		  clearInterval(this.showLogInterval);		  
 	  },
 	  
 	  /*
@@ -207,8 +206,12 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 		  if($('#instruction-menu-button').hasClass('active')) {
 			  var template = instructions({instructions:allInstructions});		   
 			  $('#content').html(template);			  
-			  $('#datetime-from').datetimepicker();
-			  $('#datetime-to').datetimepicker();
+			  $('#datetime-from').datetimepicker({
+				  pickTime: false
+			  });
+			  $('#datetime-to').datetimepicker({
+				  pickTime: false
+			  });
 		  }		  
 	  },
 	  

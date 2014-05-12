@@ -98,12 +98,15 @@ def get_temperature_readings():
                 reading = TemperatureReading(probe_id, temperature_C)
                 readings.append(reading)
                 if probe_id == master_probe_id:
-                    global last_master_reading
-                    last_master_reading = reading
+                    global _last_master_reading
+                    _last_master_reading = reading.temperature_C
     else:
         for probe_id in probe_ids:                        
             reading = test_data.get_temperature_for_probe(probe_id)
             readings.append(reading)
+            if probe_id == master_probe_id:
+                global _last_master_reading
+                _last_master_reading = reading.temperature_C
     return readings        
 
 def determine_master_probe():

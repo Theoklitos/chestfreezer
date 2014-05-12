@@ -82,8 +82,7 @@ function initializeChart(model, view) {
 			name : probeName,
 			dataPoints : []
 		});
-	}
-	;
+	}		
 	view.initializeChart(model.chartData);
 }
 
@@ -173,13 +172,14 @@ function setStatusPanelEvents(api, view, model, utils, log) {
  * updates the: instruction list and the current temperature 
  */
 function updateAfterInstructionChanged(api, view, model) {
+	view.setActiveMenuButton($('#instruction-menu-button'));
 	updateInstructions(api, view, model);
 	updateTargetTemperature(api, view);
 }
 /*
  * sets the actions for the instruction panel
  */
-function setInstructionEvents(api, view, model, utils) {	
+function setInstructionEvents(api, view, model, utils, log) {	
 	$('#instruction-menu-button').click(function() {
 		view.setActiveMenuButton(this);
 		updateInstructions(api, view, model);
@@ -209,17 +209,19 @@ function setInstructionEvents(api, view, model, utils) {
 			} else {
 				api.updateInstruction(formData, model.selected_instruction_id);
 				log.log('instruction #' + model.selected_instruction_id + ' updated')
-			}
+			}			
 			updateAfterInstructionChanged(api, view, model);
 		} catch (e) {
-			// evaluation exception
-			view.alert(e.message);
+			view.alert(e);
+		} finally {
+			return false;
 		}
-		return false;
 	});
-	$('#delete-instruction').on('click', function() {
-		if (!data.selected_instruction_id == undefined) {
-			api.deleteInstruction(data.selected_instruction_id);
+	$(document).on('click', '#delete-instruction', function() {
+		console.log(model.selected_instruction_id);
+		if (!(model.selected_instruction_id == undefined)) {
+			api.deleteInstruction(model.selected_instruction_id);
+			model.selected_instruction_id = undefined;
 			updateAfterInstructionChanged(api, view, model);
 			log.log('instruction #' + model.selected_instruction_id + ' deleted')
 		}
@@ -330,9 +332,9 @@ function main(domReady, utils, api, model, config, view, log) {
 	api.updateProbeInfo(function() {
 		initializeChart(model, view);
 	});
-	updateDeviceInfo(api, view, model);
-	//fetchTemperatures(api, model, view, utils, 0, utils.getCurrentUnixTimestamp());
+	updateDeviceInfo(api, view, model);	
 	view.initializeGauge();
+	fetchTemperatures(api, model, view, utils, 0, utils.getCurrentUnixTimestamp());
 
 	log.log('Data initialized');
 	

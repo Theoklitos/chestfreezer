@@ -207,7 +207,7 @@ def _is_time_between(timestamp, from_timestamp, to_timestamp):
     return (timestamp > from_timestamp) & (timestamp < to_timestamp)
 
 @synchronized
-def get_instructions(from_timestamp=time.time(), to_timestamp=time.time()):
+def get_instructions(from_timestamp=time.time(), to_timestamp=time.time()): #max unix time
     """ reads the instructions table and returns all the instructions that would be valid for the given time """
     found_instructions = []
     sql_statement = "SELECT * FROM " + INSTRUCTIONS_TABLE_NAME    

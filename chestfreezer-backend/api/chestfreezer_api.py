@@ -221,7 +221,9 @@ def _get_instruction(instruction_id):
 def get_instructions():    
     if not request.query_string:        
         print 'Returning all instructions...'
-        return json_parser.get_instruction_array_as_json(db_adapter.get_instructions())
+        allInstructions = db_adapter.get_instructions(0,2147483648); #end of unix time
+        response.content_type = 'application/json;'
+        return json_parser.get_instruction_array_as_json(allInstructions)
     if (request.query_string is not None) & ('now' in request.query_string):
         print 'Returning instruction for current time...'
         try:
@@ -407,7 +409,7 @@ def static_files(path):
     
 def start():
     def start_on_different_thread():        
-        bottle.run(host='0.0.0.0', port=configuration.port())
+        bottle.run(host='0.0.0.0', port=configuration.port(), server="paste")
     global web_run_thread
     web_run_thread = Thread(target=start_on_different_thread, args=())
     web_run_thread.daemon = True

@@ -123,8 +123,19 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 		updateInstructions : function(onSuccess) {
 			reference = this;
 			this.makeAjaxCallToBackend('GET', '/instruction', true, function(response) {				
-				model.instructions = response;
+				model.instructions = response;				
 				reference.updateActiveInstruction(onSuccess);				
+			});
+		},
+		
+		/*
+		 * deletes the given instruction by its id
+		 */
+		deleteInstruction : function(instructionId) {
+			this.makeAjaxCallToBackend('DELETE', '/instruction/' + instructionId, true, function() {
+				view.alert('Instruction #' + instructionId + ' deleted.');
+			}, function(xhr, status, error) {
+				view.alert('Could not delete instruction: ' + xhr.responseText + ".");
 			});
 		},
 		
@@ -144,8 +155,7 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 		 * calls the backend to update the data of the given probe 
 		 */
 		updateProbe : function(probe) {
-			formData = 'name=' + probe.name + '&master=' + probe.master;
-			console.log('updating probe with: ' + formData)
+			formData = 'name=' + probe.name + '&master=' + probe.master;			
 			this.makeAjaxCallToBackend('PUT', '/probe/' + probe.probe_id, true, function() {
 				// do nothing on success, probes are updated in batches
 			}, function(xhr, status, error) {
@@ -157,6 +167,7 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 		 * PUTs data to update an instruction
 		 */
 		updateInstruction : function(formData, instruction_id) {
+			console.log('updating with: ' + formData)
 			this.makeAjaxCallToBackend('PUT', '/instruction/' + instruction_id, true, function() {
 				view.alert('Instruction successfully updated.');
 			}, function(xhr, status, error) {

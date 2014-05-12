@@ -166,7 +166,7 @@ def get_actual_target_temperature_C():
 
 def start_temperature_control_thread():
     """ start the thread that monitors and control the devices in order to control the temperature """
-    def control_temperature():        
+    def control_temperature():
         while True:                   
             try:
                 actual_target_C = get_actual_target_temperature_C()                

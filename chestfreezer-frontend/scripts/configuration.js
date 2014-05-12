@@ -3,9 +3,9 @@
  */
 define({
 	rootUrl : '/chestfreezer/api',
-	temperatureUpdateIntervalSeconds : 3,
+	temperatureUpdateIntervalSeconds : 5,
 	instructionUpdateIntervalSeconds : 60,
-	showLoginForm : false,
+	showLoginForm : true,
 	username : 'test-username',
 	password : 'test-password'
 });
