@@ -16,7 +16,6 @@ from control import brew_logic
 from hardware import temperature_probes
 import traceback
 from control.brew_logic import InstructionException, Instruction
-from util.configuration import control_temperature_interval_seconds
 
 WEB_INTERFACE_ROOT = "/chestfreezer"
 API_ROOT = WEB_INTERFACE_ROOT + "/api"

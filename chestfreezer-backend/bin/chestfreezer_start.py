@@ -122,7 +122,8 @@ if __name__ == "__main__":
         print '\nInterrupted, shutting down...'
         # stop threads, cleanup, etc? TODO
         chestfreezer_gpio.cleanup()
-        sys.exit("Goodbye!")
+        print 'Goodbye!'
+        os._exit(0)
     except Exception as e:
         print 'Exception: ' + str(e)
         
