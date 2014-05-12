@@ -358,7 +358,7 @@ require([ 'domReady', 'utils', 'apiCaller', 'model', 'configuration', 'view', 'l
 		if (config.showLoginForm) {
 			view.showLoginForm(true);
 			$('#login-button').click(function() {
-				api.doAfterSignin($('#username').val(), $('#username').val(), function() {
+				api.doAfterSignin($('#username').val(), $('#password').val(), function() {
 					view.alert('Welcome to the Chestfreezer, ' + config.username + '.');
 					view.showLoginForm(false);
 					main(domReady, utils, api, model, config, view, log);
