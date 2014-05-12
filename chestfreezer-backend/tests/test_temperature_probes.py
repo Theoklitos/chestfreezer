@@ -22,7 +22,9 @@ class TestTemperatureProbes(unittest.TestCase):
     def setUp(self):        
         db_adapter.configuration.db_type = overwriten_db_type
         db_adapter.connect()        
-        temperature_probes.initialize_probes()
+        db_adapter.drop_tables()
+        db_adapter.initialize_tables()
+        temperature_probes.initialize_probes()        
                 
     def test_set_master_probe(self):        
         temperature_probes.determine_master_probe()
@@ -49,9 +51,8 @@ class TestTemperatureProbes(unittest.TestCase):
         temperature_probes.set_probe_name(db_adapter.get_all_probes()[1].probe_id, "new name")
         assert(db_adapter.get_all_probes()[1].name == 'new name')        
 
-    def tearDown(self):        
-        db_adapter.drop_tables()
-        db_adapter.initialize_tables()
+    def tearDown(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()

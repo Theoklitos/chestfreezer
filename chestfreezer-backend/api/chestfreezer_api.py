@@ -16,6 +16,7 @@ from control import brew_logic
 from hardware import temperature_probes
 import traceback
 from control.brew_logic import InstructionException, Instruction
+from util.configuration import control_temperature_interval_seconds
 
 WEB_INTERFACE_ROOT = "/chestfreezer"
 API_ROOT = WEB_INTERFACE_ROOT + "/api"
@@ -125,6 +126,16 @@ def _get_boolean_value(parameter_name, should_abort_call_if_neither=True):
         abort('Parameter "' + parameter_name + '" must be either "true" or "false"')
     return result
 
+def _get_integer_value(parameter_name):
+    """ parses the parameter to an integer, fails if NaN """
+    result = _get_parameter_value(parameter_name)     
+    if not result:
+        return
+    try:
+        return int(result)
+    except:
+        abort(400, 'Parameter "' + parameter_name + '" was not an integer')    
+
 def _get_timestamp_parameter(parameter_name, should_abort_if_missing=False):
     """ tries to get a (unix) timestamp parameter as an integer """
     try:
@@ -174,6 +185,12 @@ def get_temperatures():
     except (TypeError, ValueError) as e:
         abort(400, "Malformed timestamp parameter(s): " + str(e))
 
+@bottle.delete(API_ROOT + '/temperature', apply=[chestfreezer_call_decorator, enable_cors])
+def delete_temperatures():           
+    db_adapter.delete_all_temperatures();
+    print 'Deleted all temperature readings.'       
+    response.status = 204
+        
 def _check_for_temperature_override_removal():
     """ checks if there is an override parameter and if its set to False """
     override = _get_boolean_value('override',False)
@@ -390,7 +407,31 @@ def set_device_state(device_name):
         abort(400, 'Device "' + device_name + '" is unrecognized. Please use "heater" or "freezer"')
     response.status = 204;
 ####################################################################################################################
-    
+
+
+########################## OPTIONS #################################################################################
+@bottle.get(API_ROOT + '/options', apply=[chestfreezer_call_decorator, enable_cors])
+def get_all_configuration_options():     
+    return json_parser.get_options_as_json()
+
+@bottle.post(API_ROOT + '/options', apply=[chestfreezer_call_decorator, enable_cors])
+def set_options():    
+    store_temperature_interval_seconds = _get_integer_value("store_temperature_interval_seconds")
+    if store_temperature_interval_seconds:
+        configuration.set_store_temperature_interval_seconds(store_temperature_interval_seconds)
+        print 'Set temperature store interval to ' + str(store_temperature_interval_seconds) + ' second(s)'
+    instruction_interval_seconds = _get_integer_value("instruction_interval_seconds")
+    if instruction_interval_seconds:
+        configuration.set_instruction_interval_seconds(instruction_interval_seconds)
+        print 'Set instruction check interval to ' + str(instruction_interval_seconds) + ' second(s)'    
+    control_temperature_interval_seconds = _get_integer_value("monitor_temperature_interval_seconds")
+    if control_temperature_interval_seconds:        
+        configuration.set_control_temperature_interval_seconds(control_temperature_interval_seconds)
+        print 'Set temperature monitor interval to ' +  str(control_temperature_interval_seconds) + ' second(s)'    
+    response.status = 204
+####################################################################################################################
+
+
 @bottle.get(WEB_INTERFACE_ROOT)
 def index():
     return static_files(FRONTEND_INDEX_FILENAME)        
@@ -407,11 +448,11 @@ def static_files(path):
     else:       
         return static_file(path, root=FRONTEND_JAVASCRIPT_FILE_PATH)    
     
-def start():
+def start(server_type="paste"):
     def start_on_different_thread():        
-        bottle.run(host='0.0.0.0', port=configuration.port(), server="paste")
+        bottle.run(host='0.0.0.0', port=configuration.port(), server=server_type)
     global web_run_thread
     web_run_thread = Thread(target=start_on_different_thread, args=())
     web_run_thread.daemon = True
-    web_run_thread.start()
+    web_run_thread.start()    
 

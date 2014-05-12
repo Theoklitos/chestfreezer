@@ -20,7 +20,7 @@ class TestBrewLogic(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         brew_logic.configuration.db_type = overwriten_db_type                
-        db_adapter.connect()       
+        db_adapter.connect()
         
     def setUp(self):
         db_adapter.drop_tables(False)
@@ -85,3 +85,6 @@ class TestBrewLogic(unittest.TestCase):
         except InstructionException:
             # all good, test succeed
             pass
+
+if __name__ == '__main__':
+    unittest.main()

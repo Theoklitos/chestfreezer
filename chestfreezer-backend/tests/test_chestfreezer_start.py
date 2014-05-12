@@ -12,7 +12,7 @@ from mock import Mock
 def overwriten_db_type():
     return 'memory'
 
-class TestDatabaseAdapter(unittest.TestCase):    
+class TestChestfreezerStart(unittest.TestCase):    
     
     def setUp(self):
         chestfreezer_start.configuration.db_type = overwriten_db_type
@@ -29,7 +29,7 @@ class TestDatabaseAdapter(unittest.TestCase):
         chestfreezer_start.chestfreezer_gpio.output_pin_for_time = Mock()
         chestfreezer_start.temperature_probes.initialize_probes = Mock()
         chestfreezer_start.temperature_probes.determine_master_probe = Mock()        
-        chestfreezer_start.check_hardware()        
+        chestfreezer_start.check_hardware(skip_keyboard_input = True)        
               
         chestfreezer_start.chestfreezer_gpio.output_pin_for_time.assert_any_call('5', False, 1) # @UndefinedVariable
         chestfreezer_start.chestfreezer_gpio.output_pin_for_time.assert_any_call('3', False, 1) # @UndefinedVariable        
@@ -53,9 +53,11 @@ class TestDatabaseAdapter(unittest.TestCase):
         chestfreezer_start.logic.start_instruction_thread.assert_called_once_with() # @UndefinedVariable
         chestfreezer_start.logic.start_temperature_control_thread.assert_called_once_with() # @UndefinedVariable        
     
-    def test_start_web_interface(self):                
-        chestfreezer_start.start_web_interface()        
+    def test_start_web_interface(self):        
+        chestfreezer_start.configuration.port = lambda: 12345;        
+        chestfreezer_start.start_web_interface("wsgiref")        
         assert(chestfreezer_start.api.web_run_thread.isAlive())
+        
 
 if __name__ == '__main__':
     unittest.main()

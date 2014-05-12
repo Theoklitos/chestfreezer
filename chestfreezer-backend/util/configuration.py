@@ -70,7 +70,9 @@ def _get_array_option_with_default(option_name, default_value):
 
 def _get_boolean_option(option_name, default_value):
     """ parses and returns a config value of true/false to a boolean object """
-    value = _get_option_with_default(option_name, default_value).strip()    
+    print 'inside get boolean option'
+    value = _get_option_with_default(option_name, default_value).strip()
+    print 'value : ' + str(value)    
     if value in ['True', 'true', 'TRUE']:
         return True
     elif value in ['False', 'false', 'FALSE']:
@@ -79,7 +81,7 @@ def _get_boolean_option(option_name, default_value):
 
 def _get_option_with_default(option_name, default_value):
     """ if the option exists, returns its value. If it is empty or does not exist, returns the default value"""
-    try:
+    try:        
         option_value = Config.getoption(option_name)        
         if not option_value:
             raise NoOptionError

@@ -15,7 +15,7 @@ PROBE1_ID = "123456"  # high value
 PROBE2_ID = "3337EA"  # average
 PROBE3_ID = "999909"  # low
 
-def insert_test_temperatures(number_of_readings_per_probe=1000):
+def insert_dummy_temperatures(number_of_readings_per_probe=1000):
     """ injects the given number of temperature readings in the given database """    
     readings = []
     probe_ids = hardware.temperature_probes.probe_ids        

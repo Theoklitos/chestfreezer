@@ -125,11 +125,11 @@ def _store_instruction(instruction):
     db.commit()    
 
 @synchronized
-def store_probe(probe, should_overwrite=True):        
+def store_probe(probe, should_overwrite=True):            
     """ stores (with the option to overwrite) a new probe """    
     cursor.execute("SELECT * FROM " + PROBES_TABLE_NAME + " WHERE probe_id='" + probe.probe_id + "'")
     results = cursor.fetchall()    
-    if len(results) == 0:
+    if len(results) == 0:        
         insert_sql = "INSERT INTO " + PROBES_TABLE_NAME + " VALUES ('" + probe.probe_id + "','" + probe.name + "', 1)"
         cursor.execute(insert_sql)
         print 'Registered new probe #' + probe.probe_id
@@ -267,3 +267,30 @@ def delete_instruction(instruction_id):
     delete_sql = "DELETE FROM " + INSTRUCTIONS_TABLE_NAME + " WHERE instruction_id='%s'" % instruction_id.strip()           
     cursor.execute(delete_sql)
     db.commit()
+
+@synchronized
+def delete_all_temperatures():
+    if _is_memory_db():
+        cursor.execute('DELETE FROM ' + TEMPERATURE_READINGS_TABLE_NAME)
+    else:
+        cursor.execute('TRUNCATE TABLE ' + TEMPERATURE_READINGS_TABLE_NAME)
+    
+@synchronized
+def get_database_size():
+    if _is_memory_db():
+        return -1
+    else:
+        cursor.execute('SELECT table_schema, sum(data_length + index_length) / 1024 / 1024 "Megabytes" FROM information_schema.TABLES WHERE table_schema="chestfreezer";')
+        result = (int(cursor.fetchall()[0][1]))
+        return result
+
+@synchronized
+def get_database_free_size():
+    if _is_memory_db():
+        return -1
+    else:
+        cursor.execute('SELECT table_schema, sum( data_length + index_length ) / 1024 / 1024 "Megabytes", sum( data_free )/ 1024 / 1024 "Free Megabytes" FROM information_schema.TABLES WHERE table_schema="chestfreezer";')    
+        result = (int(cursor.fetchall()[0][2]))
+        return result
+
+

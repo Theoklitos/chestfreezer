@@ -12,7 +12,7 @@ import time
 import database.db_adapter
 from util import misc_utils, configuration
 from hardware import chestfreezer_gpio
-from tests import test_data
+from util import data_for_testing
 from threading import Thread
 
 TEMPERATURE_PROBE_PATH = '/sys/bus/w1/devices/' 
@@ -66,17 +66,16 @@ def read_temp_raw(device_file):
 
 def initialize_probes():
     """ looks for existing probes in the /sys folder and writes their ids to the database """
-    global probe_ids     
+    global probe_ids    
     if chestfreezer_gpio.using_real_pi:   
         for device_folder in glob.glob(TEMPERATURE_PROBE_PATH + '28*'):        
             probe_id = device_folder.split('28-', 1)[1]        
             probe_id_pruned = str(probe_id[5:])            
             probe_ids.append(probe_id_pruned)
     else:  
-        probe_ids.append(test_data.PROBE1_ID)
-        probe_ids.append(test_data.PROBE2_ID)
-        probe_ids.append(test_data.PROBE3_ID)
-    
+        probe_ids.append(data_for_testing.PROBE1_ID)
+        probe_ids.append(data_for_testing.PROBE2_ID)
+        probe_ids.append(data_for_testing.PROBE3_ID)    
     for probe_id in probe_ids:
         probe = Probe(probe_id)
         database.db_adapter.store_probe(probe, False)
@@ -102,7 +101,7 @@ def get_temperature_readings():
                     _last_master_reading = reading.temperature_C
     else:
         for probe_id in probe_ids:                        
-            reading = test_data.get_temperature_for_probe(probe_id)
+            reading = data_for_testing.get_temperature_for_probe(probe_id)
             readings.append(reading)
             if probe_id == master_probe_id:
                 global _last_master_reading

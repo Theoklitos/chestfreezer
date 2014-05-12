@@ -8,7 +8,8 @@ Simple json marshalling utils for the classes in this project
 @author: theoklitos
 '''
 from control import brew_logic
-from util import misc_utils
+from util import misc_utils, configuration
+from database import db_adapter
 
 
 def _pretty_state_identifier(state):
@@ -86,6 +87,20 @@ def get_target_temperature_json():
     actual_target_F = misc_utils.celsius_to_fahrenheit(actual_target_C)
     if brew_logic.current_instruction_id is not None: current_instruction_json = ',\n"current_instruction_id" : "' + brew_logic.current_instruction_id + '" '
     return '{\n  "target_temperature_C" : ' + str(actual_target_C) + ',\n  "target_temperature_F" : ' + str(actual_target_F) + ',\n  "overridden" : "' + str(is_overriden).lower() + '"' + current_instruction_json + '\n}' 
+
+def get_options_as_json():
+    """ returns the application options as a json object """
+    store_temperature_interval_seconds = configuration.store_temperature_interval_seconds()     
+    l1 = '  "store_temperature_interval_seconds" : ' + str(int(store_temperature_interval_seconds)) + ',';
+    instruction_interval_seconds = configuration.instruction_interval_seconds()
+    l2 = '  "instruction_interval_seconds" : ' + str(int(instruction_interval_seconds)) + ',';
+    control_temperature_interval_seconds = configuration.control_temperature_interval_seconds()
+    l3 = '  "monitor_temperature_interval_seconds" : ' + str(int(control_temperature_interval_seconds)) + ',';    
+    database_size = db_adapter.get_database_size()
+    l4 = '  "database_size_MB" : ' + str(int(database_size)) + ',';
+    database_free_size = db_adapter.get_database_free_size()
+    l5 = '  "database_free_size_MB" : ' + str(int(database_free_size)) + '';
+    return '{\n  ' + l1 + '\n  ' + l2 + '\n  ' + l3 + '\n  ' + l4 + '\n  ' + l5 + '\n}'
     
 
 

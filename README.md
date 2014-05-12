@@ -1,11 +1,9 @@
 Chestfreezer
 ============
 
-A small python application that is meant to be run in a raspberry-pi connected to a beer brewing system. This 
-requires a raspberry with have 1 to 10 DS18B20 temperature sensor(s) and 2 relays connected to the GPIO pins.
-A rough guide on how this system was built can be found [in my blog](http://beerdeveloper.wordpress.com/). 
-The python script has been tested in ubuntu and debian, of course if you are not on a raspberry-pi the GPIO
-and temperature sensors will be dummies (i.e. will read/write fake values).
+A small python web application that is meant to be run in a raspberry-pi connected to a beer brewing system. 
+This requires a raspberry with have 1 to 10 DS18B20 temperature sensor(s) and 2 relays connected to the GPIO 
+pins.A rough guide on how this system was built can be found [in my blog](http://beerdeveloper.wordpress.com/). 
 
 
 Overview
@@ -14,13 +12,13 @@ Two devices should be connected to the relays: A "heater" and a "freezer". This 
 thermostat. Temperatures are measured from the sensors, and target temperatures can be set by the user. The two
 relay devices can also be controlled directly.
 
-The basic mechanism is the "instruction", which is a target temperature that is to be maintained along with 
-two timestamps (start, end) that define the time interval in which we wish this temperature to be maintained
+The basic mechanism is the "instruction". An instruction is basically a desired temperature along two timestamps 
+(start, end) that define the time interval in which we wish this temperature to be maintained.
 
 
 Temperature Algorithm
 ---------------------
-The idea is to turn on the freezer if its warm, or turn on the cooler if its hot, with one or two degrees as a buffer.
+The idea is to turn on the freezer if its warm, or turn on the cooler if its hot, with half a degrees as a buffer.
 
 
 API

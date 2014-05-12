@@ -10,7 +10,7 @@ import httplib2
 from api import chestfreezer_api
 import time
 from database import db_adapter
-from tests import test_data
+from util import data_for_testing, configuration
 from hardware import temperature_probes
 import json
 from control import brew_logic
@@ -48,7 +48,7 @@ class TestChestfreezerAPI(unittest.TestCase):
     def _call_POST_device_state_with_content(self, turn_on_body, turn_off_body, header):
         """ switches the device state on and off with the given post bodies and header """
         response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/device/freezer', turn_on_body, header)[0]
-        assert(response.status == 200)
+        assert(response.status == 204) | (response.status == 200)
         assert(brew_logic.freezer_state)
         assert(brew_logic.freezer_override)
         response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/device/freezer', turn_off_body, header)[0]
@@ -57,9 +57,9 @@ class TestChestfreezerAPI(unittest.TestCase):
         
     @classmethod
     def setUpClass(self):
-        chestfreezer_api.start()
+        chestfreezer_api.start(server_type = "wsgiref")
         time.sleep(1)                
-        chestfreezer_api.configuration.db_type = overwriten_db_type
+        chestfreezer_api.configuration.db_type = overwriten_db_type        
         chestfreezer_api.configuration.set_should_send_emails(False)
         chestfreezer_api.configuration.set_is_security_enabled(True)        
         db_adapter.connect()        
@@ -67,7 +67,7 @@ class TestChestfreezerAPI(unittest.TestCase):
         temperature_probes.determine_master_probe()
         self.http = httplib2.Http(".cache")
         print       
-        
+            
     def setUp(self):
         chestfreezer_api.db_adapter.drop_tables(False)
         chestfreezer_api.db_adapter.initialize_tables()                
@@ -101,16 +101,16 @@ class TestChestfreezerAPI(unittest.TestCase):
     def test_set_probe_name(self):         
         second_probe_id = temperature_probes.probe_ids[0]
         response = self._call_PUT_with_credentials_and_body('http://localhost:8080/chestfreezer/api/probe/' + second_probe_id, '{"name":"new_name", "master":"true"}', 'application/json')[0]
-        assert(response.status == 200)
+        assert(response.status == 204)
         assert(db_adapter.get_probe_by_id(second_probe_id).name == 'new_name')
 
     def test_set_probe_master(self):
         response = self._call_PUT_with_credentials_and_body('http://localhost:8080/chestfreezer/api/probe/' + str(temperature_probes.master_probe_id), '{"master":"false"}', 'application/json')[0]
-        assert(response.status == 200)
+        assert(response.status == 204)
         assert(not temperature_probes.master_probe_id)
         new_master_probe_id = str(temperature_probes.probe_ids[2])
         response = self._call_PUT_with_credentials_and_body('http://localhost:8080/chestfreezer/api/probe/' + new_master_probe_id, '{"master":"TRUE"}', 'application/json')[0]
-        assert(response.status == 200)
+        assert(response.status == 204)
         assert(temperature_probes.master_probe_id == new_master_probe_id)
         assert(db_adapter.get_probe_by_id(new_master_probe_id).master)        
         
@@ -141,14 +141,14 @@ class TestChestfreezerAPI(unittest.TestCase):
         brew_logic.store_instruction_for_unique_time(instruction)        
         json = '{ "description" : "modified description", "target_temperature_C" : "15.5", "from_timestamp" : "1000"}'        
         response = self._call_PUT_with_credentials_and_body('http://localhost:8080/chestfreezer/api/instruction/1', json, 'application/json')[0]
-        assert(response.status == 200)        
+        assert(response.status == 204)        
         assert(db_adapter.get_instruction_by_id('1').from_timestamp == 1000)
         assert(db_adapter.get_instruction_by_id('1').description == 'modified description')
         assert(db_adapter.get_instruction_by_id('1').target_temperature_C == 15.5)
         
     def test_set_temperature_directly_C(self):
         response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/temperature/target', '{"target_temperature_C": 66.6}', 'application/json')[0]
-        assert(response.status == 200)
+        assert(response.status == 204)
         assert(brew_logic.temperature_override_C == 66.6)
         response, content = self._call_GET_with_credentials('http://localhost:8080/chestfreezer/api/temperature/target')
         assert(response.status == 200)
@@ -157,7 +157,7 @@ class TestChestfreezerAPI(unittest.TestCase):
         
     def test_set_temperature_directly_F(self):
         response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/temperature/target', 'target_temperature_F=120.2', 'application/x-www-form-urlencoded')[0]
-        assert(response.status == 200)        
+        assert(response.status == 204)        
         assert(str(brew_logic.temperature_override_C) == '49.0')
         response, content = self._call_GET_with_credentials('http://localhost:8080/chestfreezer/api/temperature/target')
         assert(response.status == 200)
@@ -179,13 +179,13 @@ class TestChestfreezerAPI(unittest.TestCase):
         assert(brew_logic.get_actual_target_temperature_C() == 15.5)
         # we manually override
         response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/temperature/target', '{"target_temperature_C": -5.1}', 'application/json')[0]
-        assert(response.status == 200)
+        assert(response.status == 204)
         time.sleep(0.5)
         assert(brew_logic.get_actual_target_temperature_C() == -5.1)
         # we remove our override
         time.sleep(0.5) 
         response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/temperature/target', '{"override": "false" }', 'application/json')[0]
-        assert(response.status == 200)
+        assert(response.status == 204)
         # the instruction temperature should be used again
         time.sleep(0.5)         
         assert(brew_logic.get_actual_target_temperature_C() == 15.5)
@@ -219,12 +219,12 @@ class TestChestfreezerAPI(unittest.TestCase):
         instruction = Instruction(1, 15, time.time() - 600, time.time() + 6000, 'Bla bla')
         brew_logic.store_instruction_for_unique_time(instruction)        
         response = self._call_DELETE_with_credentials('http://localhost:8080/chestfreezer/api/instruction/1')[0]
-        assert(response.status == 200)        
+        assert(response.status == 204)        
         assert(len(db_adapter.get_all_instructions()) == 0)        
     
     def test_get_temperatures(self):
         """ gets all the temperatures """
-        test_data.insert_test_temperatures(10)        
+        data_for_testing.insert_dummy_temperatures(10)        
         response, content = self._call_GET_with_credentials('http://localhost:8080/chestfreezer/api/temperature')         
         assert(response.status == 200)        
         data = json.loads(content)
@@ -232,7 +232,7 @@ class TestChestfreezerAPI(unittest.TestCase):
     
     def test_get_temperatures_for_timestamps(self):
         """ asks for temperatures within time bounds """
-        test_data.insert_test_temperatures(20)
+        data_for_testing.insert_dummy_temperatures(20)
         startMillis = str(int(time.time()) - 70)  # a little over a  minute ago        
         endMillis = str(int(time.time()))
         response, content = self._call_GET_with_credentials('http://localhost:8080/chestfreezer/api/temperature?start=' + startMillis + '&end=' + endMillis)        
@@ -240,6 +240,26 @@ class TestChestfreezerAPI(unittest.TestCase):
         data = json.loads(content)
         assert(len(data) == 6)
         
+    def test_get_options(self):
+        response, content = self._call_GET_with_credentials('http://localhost:8080/chestfreezer/api/options')
+        assert response.status == 200
+        print content
+        data = json.loads(content)
+        assert(len(data) == 5) #5 options        
+    
+    def test_set_options(self):
+        new_temp_store = 60;
+        new_instruction_interval = 120;
+        new_temp_check = 10;
+        request_body = '{ "store_temperature_interval_seconds" : ' + str(new_temp_store) + ',  "instruction_interval_seconds" : ' + str(new_instruction_interval) + ',  "monitor_temperature_interval_seconds" : ' + str(new_temp_check) + ' }'        
+        response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/options', request_body, 'application/json')[0]
+        assert(response.status == 204)  
+        assert configuration.store_temperature_interval_seconds() == new_temp_store      
+        assert configuration.instruction_interval_seconds() == new_instruction_interval
+        assert configuration.control_temperature_interval_seconds() == new_temp_check
+        
     def tearDown(self):
         print '==================== Cleared DB and ended test case ==================\n'
     
+if __name__ == '__main__':
+    unittest.main()

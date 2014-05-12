@@ -10,7 +10,7 @@ import os
 sys.path.append(os.path.abspath('..'))
 import unittest
 from database import db_adapter
-from tests import test_data
+from util import data_for_testing
 from hardware import temperature_probes
 import time
 import hardware
@@ -23,11 +23,18 @@ class TestDatabaseAdapter(unittest.TestCase):
     
     def _get_number_of_tables(self):
         """ returns all the tables in the DB - works only for the in-memory version """
-        return len(db_adapter.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall())
+        db_adapter.cursor = db_adapter.db.cursor()        
+        result = len(db_adapter.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall())
+        db_adapter.cursor.close()
+        return result;
     
     def _get_all_temperatures(self):
         """ returns all the temperature readings from the DB - works only in-memory """
-        return db_adapter.cursor.execute("SELECT * FROM " + db_adapter.TEMPERATURE_READINGS_TABLE_NAME).fetchall()
+        db_adapter.cursor = db_adapter.db.cursor()        
+        db_adapter.cursor.execute("SELECT * FROM " + db_adapter.TEMPERATURE_READINGS_TABLE_NAME)
+        result = db_adapter.cursor.fetchall()                
+        db_adapter.cursor.close()
+        return result;
     
     @classmethod
     def setUpClass(self):        
@@ -36,7 +43,7 @@ class TestDatabaseAdapter(unittest.TestCase):
         temperature_probes.initialize_probes()
         
     def test_get_temperature_readings(self):        
-        test_data.insert_test_temperatures(10)
+        data_for_testing.insert_dummy_temperatures(10)
         startSeconds = str(int(time.time()) - 30)  # less than one minute ago        
         endSeconds = str(int(time.time()))
         result = db_adapter.get_temperature_readings(startSeconds, endSeconds)
@@ -70,6 +77,21 @@ class TestDatabaseAdapter(unittest.TestCase):
         assert(len(all_probes) == 4)
         assert(all_probes[3].probe_id == '666AAA')
         assert(all_probes[3].name == 'Dummy10')
+        
+    def test_get_sizes(self):
+        if overwriten_db_type() != 'memory': # only works for mysql
+            size =  db_adapter.get_database_size();        
+            total = size + db_adapter.get_database_free_size()
+            print 'Database size: ' + str(size) + 'MB / ' + str(total) + 'MB' 
+            assert size < total
+    
+    def test_delete_all_temperatures(self): 
+        assert len(self._get_all_temperatures()) == 0
+        temps = [hardware.temperature_probes.TemperatureReading("1", 27), hardware.temperature_probes.TemperatureReading("2", 53)]
+        db_adapter.store_temperatures(temps)        
+        assert len(self._get_all_temperatures()) == 2
+        db_adapter.delete_all_temperatures()
+        assert len(self._get_all_temperatures()) == 0
             
     def tearDown(self):        
         db_adapter.drop_tables()

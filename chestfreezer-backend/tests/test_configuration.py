@@ -25,13 +25,16 @@ class TestConfiguration(unittest.TestCase):
         assert(configuration.is_ip_allowed('999.999.999.999'))
         
     def test_is_security_enabled(self):
+        oldMethod = configuration._get_option_with_default;
         configuration._get_option_with_default = Mock()
-        configuration._get_option_with_default.return_value = ' true  '
-        assert(configuration.is_security_enabled())        
-        configuration._get_option_with_default.return_value = ' false '
-        assert(not configuration.is_security_enabled())        
+        configuration._get_option_with_default.return_value = ' true '        
+        assert(configuration.is_security_enabled())    
+        configuration._get_option_with_default = Mock()    
+        configuration._get_option_with_default.return_value = ' false '        
+        assert not configuration.is_security_enabled()        
         configuration._get_option_with_default.return_value = ' blargh '
         assert(configuration.is_security_enabled())
+        configuration._get_option_with_default = oldMethod
         
 if __name__ == '__main__':
     unittest.main()

@@ -27,7 +27,7 @@ from hardware import chestfreezer_gpio, temperature_probes
 from database import db_adapter
 import time
 import termios
-from tests import test_data
+from util import data_for_testing
 import control.brew_logic as logic
 import api.chestfreezer_api as api
 
@@ -43,7 +43,7 @@ def do_sound_check():
     else:
         return False    
 
-def check_hardware():    
+def check_hardware(skip_keyboard_input = False):    
     # first the GPIO pins        
     sound_check_passed = 'skip-gpio-test' in sys.argv;
     while not sound_check_passed:
@@ -56,10 +56,11 @@ def check_hardware():
         except ValueError as e:            
             sys.exit('Pins could not be activated, reason:\n' + str(e) + '\nTerminating.')
         try:
+            if skip_keyboard_input: raise termios.error
             # eclipse cannot handle this!
             sound_check_passed = do_sound_check()
         except termios.error:
-            print 'You are using eclipse or some other IDE, check passed.'
+            print 'You are using eclipse or some other IDE or are running tests, check passed.'
             sound_check_passed = True  
     print 'GPIO pins #' + configuration.heater_pin() + ' and #' + configuration.freezer_pin() + ' connected correctly.'            
     
@@ -72,7 +73,7 @@ def check_hardware():
         print 'Found ' + str(len(probes)) + ' functional temperature sensor(s).'
         temperature_probes.determine_master_probe()
         if 'insert-test-data' in sys.argv:                        
-            test_data.insert_test_temperatures()                
+            data_for_testing.insert_dummy_temperatures()                
 
 def check_internet_connectivity():    
     print 'Checking internet connectivity...',
@@ -102,10 +103,10 @@ def start_threads():
     logic.start_instruction_thread()
     logic.start_temperature_control_thread()
 
-def start_web_interface():        
+def start_web_interface(server_type = "paste"):        
     """ starts the bottle.py server """            
     print 'Starting web interface...\n'        
-    api.start()
+    api.start(server_type)
         
 if __name__ == "__main__":
     check_and_init_database()     

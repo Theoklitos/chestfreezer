@@ -14,7 +14,7 @@ class TestChestfreezerGPIO(unittest.TestCase):
     def setUp(self):
         chestfreezer_gpio.using_real_pi = True
         
-    def test_check_output_pin(self):
+    def test_check_pythooutput_pin(self):
         chestfreezer_gpio.GPIO.setup = Mock()
         chestfreezer_gpio.GPIO.output = Mock()        
         chestfreezer_gpio.output_pin(1, False)
