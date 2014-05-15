@@ -1,6 +1,8 @@
 Chestfreezer
 ============
 
+![screenshot](http://beerdeveloper.files.wordpress.com/2014/05/cf-ss3.jpg)
+
 A small python web application that is meant to be run in a raspberry-pi connected to a beer brewing system. 
 This requires a raspberry with have 1 to 10 DS18B20 temperature sensor(s) and 2 relays connected to the GPIO 
 pins.A rough guide on how this system was built can be found [in my blog](http://beerdeveloper.wordpress.com/). 
