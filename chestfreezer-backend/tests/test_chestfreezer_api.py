@@ -240,23 +240,55 @@ class TestChestfreezerAPI(unittest.TestCase):
         data = json.loads(content)
         assert(len(data) == 6)
         
-    def test_get_options(self):
+    def test_get_settings(self):
         response, content = self._call_GET_with_credentials('http://localhost:8080/chestfreezer/api/options')
         assert response.status == 200
         print content
         data = json.loads(content)
-        assert(len(data) == 5) #5 options        
+        assert(len(data) == 6) #6 options        
     
-    def test_set_options(self):
+    def test_set_settings(self):
         new_temp_store = 60;
         new_instruction_interval = 120;
         new_temp_check = 10;
-        request_body = '{ "store_temperature_interval_seconds" : ' + str(new_temp_store) + ',  "instruction_interval_seconds" : ' + str(new_instruction_interval) + ',  "monitor_temperature_interval_seconds" : ' + str(new_temp_check) + ' }'        
+        new_temp_margin = 0.25;
+        request_body = '{ "store_temperature_interval_seconds" : ' + str(new_temp_store) + ',  "instruction_interval_seconds" : ' + str(new_instruction_interval) + ',  "monitor_temperature_interval_seconds" : ' + str(new_temp_check) + ', "temperature_tolerance_C":' + str(new_temp_margin) + '}'        
         response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/options', request_body, 'application/json')[0]
         assert(response.status == 204)  
         assert configuration.store_temperature_interval_seconds() == new_temp_store      
         assert configuration.instruction_interval_seconds() == new_instruction_interval
         assert configuration.control_temperature_interval_seconds() == new_temp_check
+        assert configuration.temperature_tolerance() == new_temp_margin
+        
+    def test_get_all_beers(self):
+        beer1 = brew_logic.Beer('Random Encounter', 'Hefeweizen', time.time() - 20000, time.time() - 10000, time.time() - 10000, time.time() - 5000, 7, 'Awesome hefe!',0);
+        beer2 = brew_logic.Beer('Bitter End', 'IPA', time.time() - 20000, time.time() - 10000, time.time() - 10000, time.time() - 5000, 9, 'Great IPA!',1);
+        db_adapter.store_beer(beer1)
+        db_adapter.store_beer(beer2)
+        response, content = self._call_GET_with_credentials('http://localhost:8080/chestfreezer/api/beer')        
+        assert(response.status == 200)                        
+        data = json.loads(content)
+        assert(len(data) == 2)
+        
+    def test_modify_beer(self):
+        beer = brew_logic.Beer('Test Beer', 'Weirdstyle', -1, -1, -1, -1, 4, 'S.M.A.S.H', 10);
+        db_adapter.store_beer(beer)
+        response = self._call_PUT_with_credentials_and_body('http://localhost:8080/chestfreezer/api/beer/10', '{ "name":"Test Beer Mk2","style":"S.M.A.S.H.","fermenting_from":100000,"fermenting_to":200000,"conditioning_from":300000,"conditioning_to":400000,"rating":10,"comments":"this is cool" }', 'application/json')[0]        
+        assert(response.status == 200)
+        modified_beer = db_adapter.get_beer_by_name('Test Beer Mk2')
+        assert modified_beer.style == 'S.M.A.S.H.'
+        assert modified_beer.fermenting_from_timestamp == 82800
+        assert modified_beer.fermenting_to_timestamp == 169200
+        assert modified_beer.conditioning_from_timestamp == 255600
+        assert modified_beer.conditioning_to_timestamp == 342000
+        assert modified_beer.rating == 10
+        assert modified_beer.comments == "this is cool"
+        
+    def test_create_beer(self):
+        response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/beer', '{ "name" : "Crappy Beer" }', 'application/json')[0]
+        assert(response.status == 201)
+        assert len(db_adapter.get_all_beers())
+        assert db_adapter.get_all_beers()[0].name == 'Crappy Beer'
         
     def tearDown(self):
         print '==================== Cleared DB and ended test case ==================\n'

@@ -7,6 +7,7 @@ Tests for the database adapter
 '''
 import sys
 import os
+from control.brew_logic import Beer, BeerException
 sys.path.append(os.path.abspath('..'))
 import unittest
 from database import db_adapter
@@ -55,9 +56,9 @@ class TestDatabaseAdapter(unittest.TestCase):
         assert(len(result) == 0)
     
     def test_drop_tables(self):        
-        assert(self._get_number_of_tables() == 3)  # we begin with 3 tables
+        assert(self._get_number_of_tables() == 4)  # we begin with 4 tables
         db_adapter.drop_tables()
-        assert(self._get_number_of_tables() == 0)  # we begin with 3 tables        
+        assert(self._get_number_of_tables() == 0)          
     
     def test_store_temperatures(self):        
         assert(len(self._get_all_temperatures()) == 0)
@@ -92,7 +93,30 @@ class TestDatabaseAdapter(unittest.TestCase):
         assert len(self._get_all_temperatures()) == 2
         db_adapter.delete_all_temperatures()
         assert len(self._get_all_temperatures()) == 0
-            
+        
+    def test_store_retrieve_beer(self):
+        new_beer = Beer('Random Encounter', 'Hefeweizen', time.time() - 20000, time.time() - 10000, time.time() - 10000, time.time() - 5000, 7, 'Awesome hefe!');
+        assert len(db_adapter.get_all_beers()) == 0
+        db_adapter.store_beer(new_beer)
+        assert len(db_adapter.get_all_beers()) == 1
+        try:
+            assert len(db_adapter.get_beer_by_name('wrong_name'))
+            assert False                 
+        except BeerException:
+            pass #all good, beer did not exist (as expected)                
+        retrieved_beer = db_adapter.get_beer_by_name('Random Encounter')
+        assert retrieved_beer.name == new_beer.name
+        # also modify some data
+        retrieved_beer.name = 'Random Encounter Mk2'
+        retrieved_beer.comments = 'Improved version!'
+        retrieved_beer.rating = 10
+        retrieved_beer._verifyDataMakeSense();
+        db_adapter.store_beer(retrieved_beer)
+        twice_retriever = db_adapter.get_beer_by_name('Random Encounter Mk2')
+        assert twice_retriever.rating == 10
+        db_adapter.delete_beer_by_name('Random Encounter Mk2')
+        assert len(db_adapter.get_all_beers()) == 0
+        
     def tearDown(self):        
         db_adapter.drop_tables()
         db_adapter.initialize_tables()

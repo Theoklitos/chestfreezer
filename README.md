@@ -47,6 +47,10 @@ the actual tempetarure.
 * __GET /chestfrezer/api/temperature/device__, to get the state of the freezer and the cooler.
 * __POST /chestfrezer/api/temperature/device/{device_name}__ in order to switch the freezer or cooler on/off.
 
+* __GET /chestfreezer/api/beer__, to get a list of all the beers.
+* __POST /chestfreezer/api/beer__, to create a new beer - only the name is required.
+* __PUT /chestfreezer/api/beer{id}__, to modify the beer with the given id.
+
 Access control is a single username/password in the config file that is matched to the Basic auth header.
 
 
@@ -54,7 +58,8 @@ Frontend
 --------
 A small javascript single page app that uses requirejs, bootstrap and handlebars and some canvasjs graphs polls the server for
 temperature updates and also controls the devices.
-
+One can compile/minify all the javascript with r.js, by the command <pre>node r.js -o build.js</pre>. This will generate the 
+__chestfreezer-built.js__ file which is significantly smaller and faster to run.
 
 Configuration
 -------------

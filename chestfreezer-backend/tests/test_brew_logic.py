@@ -8,7 +8,8 @@ Tests for the brewing logic, instructions, and temperature settings
 import unittest
 from control import brew_logic
 from database import db_adapter
-from control.brew_logic import Instruction, InstructionException
+from control.brew_logic import Instruction, InstructionException, Beer,\
+    BeerException
 import time
 from hardware import temperature_probes
 
@@ -85,6 +86,51 @@ class TestBrewLogic(unittest.TestCase):
         except InstructionException:
             # all good, test succeed
             pass
+    
+    def test_beer_initialization_timestamps_reverse(self):
+        fermenting_from = time.time() - 1000;
+        fermenting_to = time.time() - 2000; #this should be before
+        conditioning_from = time.time() - 1000;
+        conditioning_to = time.time() - 500;
+        try:
+            Beer('Random Encounter', 'Hefeweizen', fermenting_from, fermenting_to, conditioning_from, conditioning_to);
+            assert False
+        except BeerException:
+            pass         
+    
+    def test_beer_initialization_conditioning_before_fermenting(self):
+        conditioning_from = time.time() - 2000;
+        conditioning_to = time.time() - 1000;
+        fermenting_from = time.time() - 1000;
+        fermenting_to = time.time() - 500;         
+        try:
+            Beer('Random Encounter', 'Hefeweizen', fermenting_from, fermenting_to, conditioning_from, conditioning_to);
+            assert False
+        except BeerException:
+            pass         
+    
+    def test_beer_initialization_conditioning_overlaps_fermenting(self):
+        fermenting_from = time.time() - 2000;
+        fermenting_to = time.time() - 800;
+        conditioning_from = time.time() - 1000;
+        conditioning_to = time.time() - 500;
+        try:
+            Beer('Random Encounter', 'Hefeweizen', fermenting_from, fermenting_to, conditioning_from, conditioning_to);
+            assert False
+        except BeerException:
+            pass  
+    
+    def test_correct_beer_initialization(self):
+        fermenting_from = time.time() - 2000;
+        fermenting_to = time.time() - 1000;
+        conditioning_from = time.time() - 1000;
+        conditioning_to = time.time() - 500;
+        beer = Beer('Random Encounter', 'Hefeweizen', fermenting_from, fermenting_to, conditioning_from, conditioning_to);
+        assert beer.name == 'Random Encounter'
+        assert beer.style == 'Hefeweizen'
+        beer.rating = 5;
+        assert beer.rating == 5;
+        print beer
 
 if __name__ == '__main__':
     unittest.main()

@@ -97,3 +97,15 @@
 	color: red;
 }
 
+#settings-button-panel {
+	display: inline-block;	
+}
+
+.form-horizontal .control-label {
+	text-align:ŕight;
+}
+
+#settings-buttons {
+	text-align:center;
+}
+

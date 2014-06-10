@@ -14,6 +14,9 @@ requirejs.config({
 		'hbs' : 'lib/hbs'
 	},
 	shim : {
+		'domReady' : {
+			deps : [ 'bootstrap' ]
+		},
 		'bootstrap' : {
 			deps : [ 'jquery', 'moment', 'bootstrap-datetimepicker' ]
 		},
@@ -42,85 +45,81 @@ function pushTempReadingIntoDatapoints(model, utils, tempReading) {
 	for (n in model.chartData) {
 		dataForProbe = model.chartData[n];
 		if (dataForProbe.name.indexOf(utils.getProbeNameForProbeId(tempReading.probe_id)) > -1) {
+			var timestamp = tempReading.timestamp * 1000;
 			dataForProbe.dataPoints.push({
-				x : tempReading.timestamp * 1000,
-				y : parseFloat(tempReading.temperature_C)
+				x : timestamp,
+				y : parseFloat(tempReading.temperature_C),
+				label: new Date(timestamp),
 			});
 		}
 	}
 }
 
 /*
- * gets the temperatures for the given time period, and also sets the current temperature
+ * Polls the temperatures for the given time period, and also sets the current temperature
  */
-function fetchTemperatures(api, model, view, utils, startMillis, endMillis) {
+function fetchTemperatures(api, view, model, utils, startMillis, endMillis, callback) {	
+	view.overlay.showLoadingOverlayChart(true);
 	api.updateTemperaturesForTime(startMillis, endMillis, function(temperatureReading) {
 		pushTempReadingIntoDatapoints(model, utils, temperatureReading);
 		if (utils.isMasterTemperature(temperatureReading)) {
 			view.setCurrentTemperature(tempReading.temperature_C);
-		}
+		}		
+	}, function() { 
+		// this happens after all the temperatures have been read
 		view.chart.render();
+		view.overlay.showLoadingOverlayChart(false);
+		if(callback != undefined) {
+			callback();
+		}
 	});
 }
 
 /*
- * initializes the chart, and setup the temperature data array that the chart can read
- */
-function initializeChart(model, view) {
-	model.chartData = [];
-	for (var n in model.probes) {
-		var probe = model.probes[n];
-		if (probe.master == "True") {
-			probeName = probe.name + "(master)";
-		} else {
-			probeName = probe.name;
-		}		
-		model.chartData.push({
-			type : "line",
-			xValueType : "dateTime",
-			showInLegend : true,
-			name : probeName,
-			dataPoints : []
-		});
-	}		
-	view.initializeChart(model.chartData);
-}
-
-/*
- * what is called every X seconds when updating instrucions
- */
-function instructionAndTargetTemperatureThredWork(api, view, model, log) {
-	updateInstructions(api, view, model);
-	updateTargetTemperature(api, view);
-	log.log('Updated instruction and target temperature');
-}
-
-/*
- * starts a timer that updates from the server the a) instructions and b) target temperature 
+ * starts a timer that updates from the server the instructions and target temperature 
  */
 function startInstructionAndTargetTemperatureUpdateThread(api, view, model, config, log) {
-	instructionAndTargetTemperatureThredWork(api, view, model, log)
-	setInterval(function() {
-		instructionAndTargetTemperatureThredWork(api, view, model, log)		
-	}, config.instructionUpdateIntervalSeconds * 1000);
+	var threadFunction = function(){
+	    clearInterval(interval);
+	    view.updateInstructionsAndTargetTemperature();
+		log.log('Updated instructions and target temperature');	    
+	    interval = setInterval(threadFunction, config.getInstructionsUpdateIntervalSeconds());
+	}
+	var interval = setInterval(threadFunction(), config.getInstructionsUpdateIntervalSeconds());	
 }
 
 /*
  * starts a timer that polls the server about the latest temp readings
  */
 function startTemperatureUpdateThread(api, view, model, utils, config, log) {	
-	setInterval(function() {
-		startMillis = utils.getCurrentUnixTimestamp() - config.temperatureUpdateIntervalSeconds;
+	var threadFunction = function(){		
+	    clearInterval(interval);	    
+	    startMillis = utils.getCurrentUnixTimestamp() - config.temperatureUpdateIntervalSeconds;
 		endMillis = utils.getCurrentUnixTimestamp();
-		fetchTemperatures(api, model, view, utils, startMillis, endMillis);
-		log.log('Updated temperature readings', true);		
-	}, config.temperatureUpdateIntervalSeconds * 1000);
+		fetchTemperatures(api, view, model, utils, startMillis, endMillis);
+		log.log('Updated temperature readings', true);	    
+	    interval = setInterval(threadFunction, config.getTemperatureUpdateIntervalSeconds());
+	}
+	var interval = setInterval(threadFunction(), config.getTemperatureUpdateIntervalSeconds());
 }
 
 /*
- * sets the event for when the user toggles the device state
+ * starts a timer that polls the server about the state of the freezer & heater
  */
-function setDeviceSelectorEvent(api, view, model, log, deviceName) {
+function startDeviceUpdateThread(api, view, model, utils, config, log) {
+	var threadFunction = function(){
+	    clearInterval(interval);
+	    view.updateDevices();
+		log.log('Updated device state');	    
+	    interval = setInterval(threadFunction, config.getDeviceUpdateIntervalSeconds());
+	}
+	var interval = setInterval(threadFunction(), config.getDeviceUpdateIntervalSeconds());	
+}
+
+/*
+ * sets the event for when the user toggles the device state in the dropdown
+ */
+function setDeviceDropdownEvent(api, log, deviceName) {
 	var element = $('#' + deviceName + '-selector');
 	$(document).on('change', '#' + deviceName + '-selector', function() {
 		value = $(this).val();
@@ -134,15 +133,14 @@ function setDeviceSelectorEvent(api, view, model, log, deviceName) {
 			api.setDeviceOverridenState(deviceName, false);
 			log.log('Manually turned ' + deviceName + ' off')
 		}
-		updateDeviceInfo(api, view, model);
+		view.updateDevices();
 	});
 }
 
 /*
- * sets the events in the main window and the status panel
+ * sets the events in the right-side status panel
  */
-function setStatusPanelEvents(api, view, model, utils, log) {
-	// target temperature stuff
+function setStatusPanelEvents(api, view, utils, log) {
 	$(document).on('keypress', '#taget-temperature-textfield', function(event) {	
 		utils.allowEventOnlyOnFloats(event);
 	});
@@ -150,45 +148,40 @@ function setStatusPanelEvents(api, view, model, utils, log) {
 		if (this.checked) {
 			view.enableTemperatureOverridePanel(true);			
 		} else {
-			api.removeTemperatureOverride();
-			updateTargetTemperature(api, view);
-			log.log('Removed temperature override')
+			api.removeTemperatureOverride(function() {
+				view.updateTargetTemperature();
+				log.log('Removed temperature override')
+			});
 		}
 	});
 	$("#taget-temperature-button").click(function() {
 		var value = $("#taget-temperature-textfield").val();
 		if (value) {
-			api.setTemperatureOverride(value);
-			updateTargetTemperature(api, view);
-			log.log('Set temperature override to ' + value + ' ℃')
+			api.setTemperatureOverride(value, function() {				
+				view.updateTargetTemperature();
+				log.log('Set temperature override to ' + value + ' ℃')
+			});
 		}
 	});
-	// set device events
-	setDeviceSelectorEvent(api, view, model, log, 'freezer');
-	setDeviceSelectorEvent(api, view, model, log, 'heater');
+	// also set the dropdown events
+	setDeviceDropdownEvent(api, log, 'freezer');
+	setDeviceDropdownEvent(api, log, 'heater');
 }
 
-/*
- * updates the: instruction list and the current temperature 
- */
-function updateAfterInstructionChanged(api, view, model) {
-	view.setActiveMenuButton($('#instruction-menu-button'));
-	updateInstructions(api, view, model);
-	updateTargetTemperature(api, view);
-}
 /*
  * sets the actions for the instruction panel
  */
 function setInstructionEvents(api, view, model, utils, log) {	
 	$('#instruction-menu-button').click(function() {
 		view.setActiveMenuButton(this);
-		updateInstructions(api, view, model);
+		view.updateInstructions();
+		view.scrollDown();
 		return false;
 	});
 	$(document).on('keypress', '#targetTemperature', function(event) {
 		utils.allowEventOnlyOnFloats(event);
 	});
-	// the table select event
+	// the table row select event
 	$(document).on('click', '#instructions-table tbody tr', function(event) {		
 		view.setInstructionRowHighlighted($(this));		
 		if ($(this).attr('class').indexOf('table-highlight') > -1) { // if its selected
@@ -200,30 +193,36 @@ function setInstructionEvents(api, view, model, utils, log) {
 			view.setInstructionForm(); // clear the form
 		}
 	});
+	// and the two button events
 	$(document).on('click', '#save-instruction', function() {		
 		try {
 			formData = utils.evaluateInstructionFormAndGetData();			
 			if (model.selected_instruction_id == undefined) {
-				api.createNewInstruction(formData);
-				log.log('New instruction created')
+				api.createNewInstruction(formData, function() {
+					view.updateInstructions();
+					log.log('New instruction created');
+				});				
 			} else {
-				api.updateInstruction(formData, model.selected_instruction_id);
-				log.log('instruction #' + model.selected_instruction_id + ' updated')
-			}			
-			updateAfterInstructionChanged(api, view, model);
+				api.updateInstruction(formData, model.selected_instruction_id, function() {
+					view.updateInstructions();
+					log.log('instruction #' + model.selected_instruction_id + ' updated');
+				});				
+			}	
+			// view.setActiveMenuButton($('#instruction-menu-button')); why was this here?
 		} catch (e) {
+			// some sort of validation error
 			view.alert(e);
 		} finally {
 			return false;
 		}
 	});
 	$(document).on('click', '#delete-instruction', function() {
-		console.log(model.selected_instruction_id);
 		if (!(model.selected_instruction_id == undefined)) {
-			api.deleteInstruction(model.selected_instruction_id);
-			model.selected_instruction_id = undefined;
-			updateAfterInstructionChanged(api, view, model);
-			log.log('instruction #' + model.selected_instruction_id + ' deleted')
+			api.deleteInstruction(model.selected_instruction_id, function() {
+				view.updateInstructions();
+				log.log('instruction #' + model.selected_instruction_id + ' deleted')
+				model.selected_instruction_id = undefined;					
+			});
 		}
 		return false;
 	});
@@ -232,14 +231,12 @@ function setInstructionEvents(api, view, model, utils, log) {
 /*
  * sets the actions for the probe panel
  */
-function setProbeEvents(api, view, model, utils, log) {
+function setProbeEvents(api, view, model, utils, config, log) {
 	$('#probe-menu-button').click(function() {
-		view.setActiveMenuButton(this);
-		api.updateProbeInfo(function() {
-			view.showProbes(model.probes);
-		});
+		view.setActiveMenuButton(this);		
+		view.showProbes();
 		return false;
-	});	
+	});		
 	$(document).on('click', 'input.master-checkbox', function(event) {		
 	    $('input.master-checkbox').removeAttr('checked');	    
 	    $(event.target).prop('checked', true);
@@ -258,10 +255,9 @@ function setProbeEvents(api, view, model, utils, log) {
 				atLeastOneChange = true;
 			} 
 		}
-		if(atLeastOneChange) { // refresh probe view if an update has occurred			
-			api.updateProbeInfo(function() {
-				view.showProbes(model.probes);
-				initializeChart(model, view);
+		if(atLeastOneChange) { // refresh probe view if an update has occurred
+			view.showProbes(function() {
+				initializeChart(api, view, model, utils, config, log)
 				view.alert('Probe(s) updated succesfully');
 				log.log('Updated probes')
 			});			
@@ -270,22 +266,13 @@ function setProbeEvents(api, view, model, utils, log) {
 }
 
 /*
- * Calls the backend to get the instructions and updates them in the view
- */
-function updateInstructions(api, view, model) {
-	api.updateInstructions(function() {
-		view.showInstructions(model.instructions);
-		view.displayActiveInstruction(model.active_instruction);
-	});
-}
-
-/*
  * sets the actions for the log panel
  */
-function setLogEvents(api, view, utils, log) {
+function setLogEvents(api, view, model, utils, log) {
 	$(document).on('change', '#dont-show-temp-updates', function() {		
-		log.dontShowTemperatureEvents = this.checked;
-		view.refreshLog();
+		log.dontShowTemperatureEvents = $('#dont-show-temp-updates').is(':checked');
+		view.showLog();
+		return false;
 	});
 	$('#log-menu-button').click(function() {
 		view.setActiveMenuButton(this);
@@ -295,78 +282,171 @@ function setLogEvents(api, view, utils, log) {
 }
 
 /*
+ * sets the actions for the settings panel
+ */
+function setSettingsEvents(api, view, model, utils, config, log) {
+	$('#settings-menu-button').click(function() {
+		view.setActiveMenuButton(this);
+		view.showSettings();
+		return false;
+	});
+	$(document).on('keypress', '#temperature-interval', function(event) {
+		utils.allowEventOnlyOnFloats(event);
+	});
+	$(document).on('keypress', '#temperature-tolerance', function(event) {
+		utils.allowEventOnlyOnFloats(event);
+	});
+	$(document).on('keypress', '#instruction-interval', function(event) {
+		utils.allowEventOnlyOnFloats(event);
+	});
+	$(document).on('keypress', '#device-interval', function(event) {
+		utils.allowEventOnlyOnFloats(event);
+	});
+	$(document).on('keypress', '#chart-history', function(event) {
+		utils.allowEventOnlyOnFloats(event);
+	});	
+	$(document).on('click', '#delete-temperature-readings', function() {		
+		api.deleteTemperatures(function() {			
+			view.alert('All temperatures deleted from the database.')
+			log.log('Deleted all temperatures');
+			view.showSettings();
+			initializeChart(api, view, model, utils, config, log);
+		});
+		return false;
+	});
+	$(document).on('click', '#update-settings', function() {
+		config.temperatureUpdateIntervalSeconds = parseInt($('#temperature-interval').val());
+		temperatureTolerance = parseFloat($('#temperature-tolerance').val());
+		config.instructionUpdateIntervalSeconds = parseInt($('#instruction-interval').val());
+		config.devicesUpdateIntervalSeconds = parseInt($('#device-interval').val());
+		var daysPastChanged = false;
+		var newDaysPast = parseInt($('#chart-history').val());
+		if(config.daysPastToShowInChart != newDaysPast) {
+			daysPastChanged = true;
+			config.daysPastToShowInChart = newDaysPast;
+		}
+		api.updateSettings(temperatureTolerance, function() {
+			log.log('Updated settings');			
+			view.showSettings();
+			if(daysPastChanged) {
+				initializeChart(api, view, model, utils, config, log)
+			}
+		});
+		return false;
+	});
+}
+
+/*
+ * and the events for the beer-tracker tab 
+ */
+function setBeerTrackerEvents(api, view, model, utils, config, log) {
+	$('#beertracker-menu-button').click(function() {
+		view.setActiveMenuButton(this);
+		view.showBeerTracker();
+		return false;
+	});
+}
+
+/*
  * adds all the jquery/js events for clicks, in the whole app
  */
-function setEvents(api, view, model, utils, log) {
-	setStatusPanelEvents(api, view, model, utils, log);
+function setEvents(api, view, model, utils, config, log) {
+	setStatusPanelEvents(api, view, utils, log);
 	setInstructionEvents(api, view, model, utils, log);
-	setProbeEvents(api, view, model, utils, log);
-	setLogEvents(api, view, utils, log);
+	setProbeEvents(api, view, model, utils, config, log);
+	setSettingsEvents(api, view, model, utils, config, log);
+	setBeerTrackerEvents(api, view, model, utils, config, log);
+	setLogEvents(api, view, model, utils, log);		
 }
 
 /*
- * gets the target temperature and updates the guage and the status panel
+ * after reading the probes, initializes the chart going back a configuration-specified number of days 
  */
-function updateTargetTemperature(api, view) {
-	api.getTargetTemperature(function(targetTemperature, isOverride) {
-		view.setTargetTemperature(targetTemperature, isOverride);
+function initializeChart(api, view, model, utils, config, log, callback) {
+	// read probe info and initialize the chart data structure
+	// the chart data structure needs to be very specific, see http://canvasjs.com/
+	api.updateProbeInfo(function() {
+		model.chartData = [];
+		for (var n in model.probes) {
+			var probe = model.probes[n];
+			if (probe.master == "True") {
+				probeName = probe.name + "(master)";
+			} else {
+				probeName = probe.name;
+			}		
+			model.chartData.push({
+				type : "line",				
+				xValueType : "dateTime",				
+				showInLegend : true,				
+				name : probeName,
+				dataPoints : []
+			});
+		}		
+		view.initializeChart(model.chartData);
+		now = utils.getCurrentUnixTimestamp() 
+		startDate = config.daysPastToShowInChart * (24 * 60 * 60) // seconds in the given days
+		fetchTemperatures(api, view, model, utils, now-startDate, now, function() {
+			if(callback != undefined) {
+				callback();
+			}
+		});		
 	});
 }
-
-/*
- * calls the backend and updates the device text + select
- */
-function updateDeviceInfo(api, view, model) {
-	api.updateDeviceInfo(function() {
-		view.updateDevices(model.devices);
-	});
-}
-
 /*
  * main method
  */
-function main(domReady, utils, api, model, config, view, log) {
-	view.showMainPageForUser(config.username);
-
-	// initialize data and display
-	api.updateProbeInfo(function() {
-		initializeChart(model, view);
-	});
-	updateDeviceInfo(api, view, model);	
-	view.initializeGauge();
-	fetchTemperatures(api, model, view, utils, 0, utils.getCurrentUnixTimestamp());
-
-	log.log('Data initialized');
-	
-	// add click events
-	setEvents(api, view, model, utils, log);
-
-	// start the update threads
-	startTemperatureUpdateThread(api, view, model, utils, config, log);
-	startInstructionAndTargetTemperatureUpdateThread(api, view, model, config, log);
-	
-	log.log('Main function end');	
+function main(utils, api, model, config, view, log) {
+	try {				
+		// initialize data & view
+		view.overlay.showLoadingOverlayWholeScreen(true)		
+		view.showMainPageForUser(config.username);
+		view.updateDevices();	
+		view.initializeGauge();
+		view.updateTargetTemperature();
+		initializeChart(api, view, model, utils, config, log, function() {
+			api.getSettings(undefined, false); // async call, needs to be first
+			log.log('Data initialized');
+			startTemperatureUpdateThread(api, view, model, utils, config, log);
+		});		
+		view.overlay.showLoadingOverlayWholeScreen(false)
+				
+		// add click events
+		setEvents(api, view, model, utils, config, log);
+		log.log('Events set');
+		
+		// start the update threads	
+		startInstructionAndTargetTemperatureUpdateThread(api, view, model, config, log);
+		startDeviceUpdateThread(api, view, model, utils, config, log)		
+		log.log('Main function end');		
+	} catch(exception) {
+		// "uncaught" exception! close all overlays and display msg
+		log.log('Uncaught exception!')
+		view.overlay.showLoadingOverlayWholeScreen(false)		
+		view.overlay.showLoadingOverlayChart(false)
+		exception.message ? view.alert(exception.message) : view.alert(exception);
+		throw exception
+	}
 }
 
 /*
  * wrapper with log-in functionality around the main function
  */
-require([ 'domReady', 'utils', 'apiCaller', 'model', 'configuration', 'view', 'log', 'bootstrap' ], function(domReady, utils,
+require([ 'domReady', 'utils', 'apiCaller', 'model', 'configuration', 'view', 'log' ], function(domReady, utils,
 		api, model, config, view, log) {
 	domReady(function() {
-		log.log('Main function start');
+		log.log('Main function start');		
 		if (config.showLoginForm) {
 			view.showLoginForm(true);
 			$('#login-button').click(function() {
 				api.doAfterSignin($('#username').val(), $('#password').val(), function() {
 					view.alert('Welcome to the Chestfreezer, ' + config.username + '.');
 					view.showLoginForm(false);
-					main(domReady, utils, api, model, config, view, log);
+					main(utils, api, model, config, view, log);
 				});
 				return false;
 			});
 		} else {
-			main(domReady, utils, api, model, config, view, log);
+			main(utils, api, model, config, view, log);
 		}
 	});
 });

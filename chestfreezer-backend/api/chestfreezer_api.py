@@ -15,7 +15,7 @@ from threading import Thread
 from control import brew_logic
 from hardware import temperature_probes
 import traceback
-from control.brew_logic import InstructionException, Instruction
+from control.brew_logic import InstructionException, Instruction, BeerException
 
 WEB_INTERFACE_ROOT = "/chestfreezer"
 API_ROOT = WEB_INTERFACE_ROOT + "/api"
@@ -60,15 +60,17 @@ def _do_auth_check():
     ip = 'Unknown IP' 
     pretty_now_datetime = misc_utils.timestamp_to_datetime(time.time()).strftime("%c")   
     enviroment_list = request.environ
+    
     if enviroment_list.get('REMOTE_ADDR') is not None:
         ip = enviroment_list.get('REMOTE_ADDR')
     if enviroment_list.get('REMOTE_ADDR') is None:        
         allowed_ip = configuration.is_ip_allowed(ip) | (ip == 'Unknown IP')
+    
     if not configuration.is_security_enabled(): 
         authorized = True
     elif request.auth is not None:        
         user, password = request.auth
-        allowed_ip = configuration.is_ip_allowed(ip)
+        allowed_ip = configuration.is_ip_allowed(ip)        
         # print user + '==' + configuration.web_user() + ':' + str(user == configuration.web_user())
         # print password + '==' + configuration.web_pwd() + ':' + str(password == configuration.web_pwd())
         if (user == configuration.web_user()) & (password == configuration.web_pwd()) & (allowed_ip):    
@@ -125,6 +127,16 @@ def _get_boolean_value(parameter_name, should_abort_call_if_neither=True):
         abort('Parameter "' + parameter_name + '" must be either "true" or "false"')
     return result
 
+def _get_float_value(parameter_name):
+    """ parses the parameter to an float, fails if its not one """
+    result = _get_parameter_value(parameter_name)     
+    if not result:
+        return
+    try:
+        return float(result)
+    except:
+        abort(400, 'Parameter "' + parameter_name + '" was not an float') 
+        
 def _get_integer_value(parameter_name):
     """ parses the parameter to an integer, fails if NaN """
     result = _get_parameter_value(parameter_name)     
@@ -149,8 +161,8 @@ def _get_timestamp_query_parameters():
     start_timestamp = 1
     end_timestamp = int(time.time())    
     if request.query_string:    
-        start_timestamp = request.query.start
-        end_timestamp = request.query.end
+        start_timestamp = request.query.start  # @UndefinedVariable
+        end_timestamp = request.query.end  # @UndefinedVariable
         if (not start_timestamp) | (not end_timestamp):
             abort(400, "Provide both 'start' and 'end' timestamp query parameters")
     return (str(int(start_timestamp)), str(int(end_timestamp)))
@@ -408,13 +420,13 @@ def set_device_state(device_name):
 ####################################################################################################################
 
 
-########################## OPTIONS #################################################################################
-@bottle.get(API_ROOT + '/options', apply=[chestfreezer_call_decorator, enable_cors])
-def get_all_configuration_options():     
-    return json_parser.get_options_as_json()
+########################## SETTINGS #################################################################################
+@bottle.get(API_ROOT + '/settings', apply=[chestfreezer_call_decorator, enable_cors])
+def get_all_settings():     
+    return json_parser.get_settings_as_json()
 
-@bottle.post(API_ROOT + '/options', apply=[chestfreezer_call_decorator, enable_cors])
-def set_options():    
+@bottle.post(API_ROOT + '/settings', apply=[chestfreezer_call_decorator, enable_cors])
+def change_settings():    
     store_temperature_interval_seconds = _get_integer_value("store_temperature_interval_seconds")
     if store_temperature_interval_seconds:
         configuration.set_store_temperature_interval_seconds(store_temperature_interval_seconds)
@@ -426,9 +438,71 @@ def set_options():
     control_temperature_interval_seconds = _get_integer_value("monitor_temperature_interval_seconds")
     if control_temperature_interval_seconds:        
         configuration.set_control_temperature_interval_seconds(control_temperature_interval_seconds)
-        print 'Set temperature monitor interval to ' +  str(control_temperature_interval_seconds) + ' second(s)'    
+        print 'Set temperature monitor interval to ' +  str(control_temperature_interval_seconds) + ' second(s)'
+    temperature_tolerance = _get_float_value("temperature_tolerance_C")
+    if temperature_tolerance:        
+        configuration.set_temperature_tolerance_C(temperature_tolerance)
+        print 'Set temperature tolerance to ' +  str(temperature_tolerance) + ' C'    
     response.status = 204
 ####################################################################################################################
+
+
+
+########################## BEERS #################################################################################
+@bottle.get(API_ROOT + '/beer', apply=[chestfreezer_call_decorator, enable_cors])
+def get_all_beers():
+    response.status = 200     
+    response.content_type = 'application/json'
+    return json_parser.get_all_beers_as_json()
+
+@bottle.put(API_ROOT + '/beer/<beer_id>', apply=[chestfreezer_call_decorator, enable_cors])
+def modify_beer(beer_id):
+    try:
+        beer = db_adapter.get_beer_by_id(beer_id)
+    except BeerException:
+        abort(404, 'Beer with id ' + beer_id + '" does not exist')   
+    # name
+    new_name = _get_parameter_value('name')
+    if new_name: beer.name = new_name        
+    # style
+    new_style = _get_parameter_value('style')
+    if new_style: beer.style = new_style
+    # fermentation
+    new_fermenting_from = _get_integer_value('fermenting_from')
+    if new_fermenting_from: beer.fermenting_from_timestamp = new_fermenting_from
+    new_fermenting_to = _get_integer_value('fermenting_to')
+    if new_fermenting_to: beer.fermenting_to_timestamp = new_fermenting_to
+    # conditioning
+    new_conditioning_from = _get_integer_value('conditioning_from')
+    if new_conditioning_from: beer.conditioning_from_timestamp = new_conditioning_from
+    new_conditioning_to = _get_integer_value('conditioning_to')
+    if new_conditioning_to: beer.conditioning_to_timestamp = new_conditioning_to
+    # rating
+    new_rating = _get_integer_value('rating')
+    if new_rating: beer.rating = new_rating
+    # comments
+    new_comments = _get_parameter_value('comments')
+    if new_comments: beer.comments = new_comments
+    # verify & store! 
+    try:
+        beer._verifyDataMakeSense();
+        db_adapter.store_beer(beer)
+        response.status = 200
+    except BeerException as e:
+        abort(400, str(e))
+    
+@bottle.post(API_ROOT + '/beer', apply=[chestfreezer_call_decorator, enable_cors])
+def create_beer():
+    beer_name = _get_parameter_value('name',True)
+    try:
+        db_adapter.get_beer_by_name(beer_name)
+        abort(400, 'Beer named "' + beer_name + '" already exists')
+    except BeerException:
+        new_beer = brew_logic.Beer(beer_name, "Undefined", -1, -1, -1, -1, 0)
+        db_adapter.store_beer(new_beer);
+        response.status = 201
+####################################################################################################################
+
 
 
 @bottle.get(WEB_INTERFACE_ROOT)

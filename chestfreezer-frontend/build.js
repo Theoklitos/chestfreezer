@@ -14,7 +14,8 @@
 		'moment' : 'lib/moment.min',
 		'bootstrap-datetimepicker' : 'lib/bootstrap-datetimepicker.min',
 		'Base64' : 'lib/Base64',
-		'hbs' : 'lib/hbs'
+		'hbs' : 'lib/hbs',
+		'loading-overlay' : 'lib/loading-overlay.min'
 	},
 	shim : {
 		'Base64' : {

@@ -38,9 +38,13 @@ def timestamp_to_datetime(timestamp):
     """ converts a unix timestamp to a datetime object """
     return datetime.datetime.fromtimestamp(timestamp)
 
-def get_storeable_timestamp(timestamp):
+def get_storeable_datetime_timestamp(timestamp):
     """ from a unix timestsamp, returns a formatable datetime that can be stored in SQL """
     return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+
+def get_storeable_date_timestamp(timestamp):
+    """ from a unix timestsamp, returns a formatable date (no time!) that can be stored in SQL """
+    return datetime.datetime.fromtimestamp(float(timestamp)).strftime('%Y-%m-%d')
 
 def is_within_distance(number, target_number, distance):
     """ returns true if the number is within 'distance' from the 'target_number' """

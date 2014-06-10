@@ -7,12 +7,13 @@
 	<title>Chestfreezer</title>	
 	<link rel="shortcut icon" href="images/favicon.ico">	
 	
-	<script data-main="scripts/chestfreezer-built" src="scripts/lib/require.js"></script>
+	<script data-main="scripts/chestfreezer" src="scripts/lib/require.js"></script>
 			
 	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css"/>
 	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css"/>
 	<link rel="stylesheet" href="styles/bootstrap-datetimepicker.min.css" />
 	<link rel="stylesheet" href="styles/chestfreezer.css" />	
+	<link rel="stylesheet" href="styles/loading-overlay.css" />
 </head>
 
 <body>
@@ -50,12 +51,13 @@
 				</div>
 			</div>
 		</div>				
-	
-		<div id="error-message-panel" class="row"><p id="error-message"></p></div>		
+			
 		<nav id="navigation-bar">
 			<ul class="nav nav-pills nav-justified chestfreezer-colored">            
 				<li id="instruction-menu-button" class="chestfreezer-menu-button"><a href="#">Instructions</a></li>							
-				<li id="probe-menu-button" class="chestfreezer-menu-button"><a href="#">Probe Control</a></li>			
+				<li id="probe-menu-button" class="chestfreezer-menu-button"><a href="#">Probe Control</a></li>
+				<li id="beertracker-menu-button" class="chestfreezer-menu-button"><a href="#">Beer Tracker</a></li>
+				<li id="settings-menu-button" class="chestfreezer-menu-button"><a href="#">Settings</a></li>
 				<li id="log-menu-button" class="chestfreezer-menu-button"><a href="#">Log</a></li>
 			</ul>
 		</nav>

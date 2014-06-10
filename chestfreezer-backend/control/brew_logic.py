@@ -12,8 +12,6 @@ import time
 from threading import Thread
 import hardware
 
-TEMPERATURE_MARGIN_C = 0.5
-
 instruction_target_temperature_C = None
 temperature_override_C = None
 
@@ -56,6 +54,31 @@ class Instruction():
             # do nothing, value will not have changed
             pass
 
+class Beer():
+    """ guess what this class represents! """
+    def __init__(self, name, style, fermenting_from_timestamp, fermenting_to_timestamp, conditioning_from_timestamp, conditioning_to_timestamp, rating = 0, comments = 'No comments', beer_id = 0):
+        self.beer_id = beer_id;
+        self.name = name;
+        self.style = style;
+        self.fermenting_from_timestamp = fermenting_from_timestamp;
+        self.fermenting_to_timestamp  = fermenting_to_timestamp;
+        self.conditioning_from_timestamp = conditioning_from_timestamp;
+        self.conditioning_to_timestamp  = conditioning_to_timestamp;
+        self._verifyDataMakeSense();
+        self.rating = rating;
+        self.comments = comments;
+    def __str__(self):
+        return 'Beer "' + self.name + '", style: ' + self.style + ', rating: ' + str(self.rating) + '/10. Comments: ' + self.comments + '\nFermenting period: ' + str(misc_utils.get_storeable_date_timestamp(self.fermenting_from_timestamp)) + ' to ' + str(misc_utils.get_storeable_date_timestamp(self.fermenting_to_timestamp)) + '\nConditioning period: ' + str(misc_utils.get_storeable_date_timestamp(self.conditioning_from_timestamp)) + ' to ' + str(misc_utils.get_storeable_date_timestamp(self.conditioning_to_timestamp))
+    def _verifyDataMakeSense(self):
+        """ makes sure that fermenting is before conditioning, and those intervals don't overlap. Also makes sure that rating is [0,10]. Throws BeerException """
+        if (self.fermenting_from_timestamp > self.fermenting_to_timestamp) | (self.conditioning_from_timestamp > self.conditioning_to_timestamp):            
+            raise BeerException('A date start timestamp is after its ending date')
+        if self.fermenting_to_timestamp > self.conditioning_from_timestamp:
+            raise BeerException('Fermentation date is after conditioning date')
+        if hasattr(self, 'rating'):
+            if (self.rating < 0) | (self.rating > 10):
+                raise BeerException('Rating must be between 0 and 10')
+
 def start_instruction_thread():
     """ starts the thread that determines which instruction to follow and when """    
     def follow_instructions():                
@@ -66,7 +89,7 @@ def start_instruction_thread():
             try:
                 instructions = database.db_adapter.get_all_instructions()                
                 if len(instructions) > 1:
-                    pretty_date = misc_utils.get_storeable_timestamp(time.time())
+                    pretty_date = misc_utils.get_storeable_datetime_timestamp(time.time())
                     instructions_string = ',\n'.join(map(str, instructions))
                     message = "More than one instruction for time " + pretty_date + ":\n" + instructions_string
                     if not has_escalated:                        
@@ -105,6 +128,10 @@ def remove_temperature_override():
     
 class InstructionException(Exception):
     """ when an instruction should not be created in the system """
+    pass
+
+class BeerException(Exception):
+    """ when something goes wrong with a beer object, usually a nonsensical date error"""
     pass
 
 def store_instruction_for_unique_time(instruction):
@@ -173,7 +200,7 @@ def start_temperature_control_thread():
                 current_temperature_C = hardware.temperature_probes.get_current_temperature()
                 if _is_device_overriden() | (current_temperature_C is None) | (actual_target_C is None): raise StopControlThread  # do nothing
                 # the great and efficient (not) algorithm!
-                if misc_utils.is_within_distance(current_temperature_C, actual_target_C, TEMPERATURE_MARGIN_C):                     
+                if misc_utils.is_within_distance(current_temperature_C, actual_target_C, configuration.temperature_tolerance()):                     
                     _set_heater(False); _set_freezer(False)                
                 elif current_temperature_C < actual_target_C:
                     _set_heater(True); _set_freezer(False)

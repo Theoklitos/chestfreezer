@@ -25,6 +25,8 @@ DEFAULT_INSTRUCTION_CHECK_INTERVAL_SECONDS = 60
 instruction_interval_overwrite = None
 DEFAULT_CONTROL_TEMPERATURE_CHECK_INTERVAL_SECONDS = 5
 control_temperature_interval_overwrite = None
+DEFAULT_TEMPERATURE_TOLERANCE_C = 0.5
+temperature_tolerance_C_overwrite = None
 DEFAULT_WEB_USER = 'test-username'
 DEFAULT_WEB_PASSWORD = 'test-password'
 DATABASE_IN_DISK_CONFIG_VALUE = 'disk'
@@ -69,10 +71,8 @@ def _get_array_option_with_default(option_name, default_value):
         return result
 
 def _get_boolean_option(option_name, default_value):
-    """ parses and returns a config value of true/false to a boolean object """
-    print 'inside get boolean option'
-    value = _get_option_with_default(option_name, default_value).strip()
-    print 'value : ' + str(value)    
+    """ parses and returns a config value of true/false to a boolean object """    
+    value = _get_option_with_default(option_name, default_value).strip()        
     if value in ['True', 'true', 'TRUE']:
         return True
     elif value in ['False', 'false', 'FALSE']:
@@ -90,6 +90,18 @@ def _get_option_with_default(option_name, default_value):
     except NoOptionError:
         return default_value    
 
+def set_temperature_tolerance_C(temperature_C):
+    """ sets the allowed tolerance/margin that the temp can deviate from the target temp """
+    global temperature_tolerance_C_overwrite
+    temperature_tolerance_C_overwrite = temperature_C
+
+def temperature_tolerance():
+    """ returns the allowed tolerance/margin that the temp can deviate from the target temp """
+    if temperature_tolerance_C_overwrite is None:
+        return float(_get_option_with_default('temperature_tolerance_C', DEFAULT_TEMPERATURE_TOLERANCE_C))
+    else:
+        return float(temperature_tolerance_C_overwrite)
+    
 def set_store_temperature_interval_seconds(seconds):
     """ sets every how many seconds should the temperature readings be stored in the DB """
     global store_interval_overwrite

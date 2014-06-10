@@ -1,43 +1,51 @@
 /*
  * Makes the ajax calls to the backend  
  */
-define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, utils, config, model, view) {
+define([ 'jquery', 'utils', 'configuration', 'model', 'overlay' ], function($, utils, configuration, model, overlay) {
 	return {
+		
 		/*
 		 * wrapper around jQuerys ajax, simply executes methods after a call to the backend has been made
 		 */
 		makeAjaxCallToBackend : function(method, url, async, onSuccess, onError, formData) {
+			if(!(url.indexOf("/temperature?start=") > -1)) {
+				overlay.showLoadingOverlayWholeScreen(true);
+			}			
 			$.ajax({
 				type : method,
-				url : config.rootUrl + url,
+				url : configuration.rootUrl + url,
 				async : async,
 				data : formData,
 				dataType : 'json',
 				beforeSend : function(xhr) {
-					xhr.setRequestHeader("Authorization", utils.getBasicAuthCredentials(config.username,
-							config.password));
+					xhr.setRequestHeader("Authorization", utils.getBasicAuthCredentials(configuration.username,
+							configuration.password));
 				},
 				success : function(response) {
 					onSuccess(response);
 				},
-				error : function(xhr, status, error) {
-					view.handleError(error);
+				error : function(xhr, status, error) {					
 					if (onError != undefined) {
 						onError(xhr, status, error)
 					} 
+				},
+				complete: function() {	
+					if(!(url.indexOf("/temperature?start=") > -1)) {
+						overlay.showLoadingOverlayWholeScreen(false);
+					}
 				}
 			});
 		},
-		
+				
 		/*
 		 * removes any overridden state of the given device
 		 */
 		removeDeviceOverride : function(deviceName) {
 			formData = 'override=False';
 			this.makeAjaxCallToBackend('POST', '/device/' + deviceName, true, function() {
-				view.alert('Device override removed.');
+				overlay.alert('Device override removed.');
 			}, function(xhr, status, error) {
-				view.alert('Could not remove device override: ' + xhr.responseText + ".");
+				overlay.alert('Could not remove device override: ' + xhr.responseText + ".");
 			}, formData);
 		},
 		
@@ -47,33 +55,52 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 		setDeviceOverridenState : function(deviceName, state) {
 			formData = 'state=' + state;
 			this.makeAjaxCallToBackend('POST', '/device/' + deviceName, true, function() {
-				view.alert(utils.capitaliseFirstLetter(deviceName) + ' succesfully overridden.');
+				overlay.alert(utils.capitaliseFirstLetter(deviceName) + ' succesfully overridden.');
 			}, function(xhr, status, error) {
-				view.alert('Could not set override: ' + xhr.responseText + ".");
+				overlay.alert('Could not set override: ' + xhr.responseText + ".");
 			}, formData);
+		},
+		
+		/*
+		 * retrieves the settings from the server and applies them to this app
+		 */
+		getSettings : function(onSuccess, async) {
+			this.makeAjaxCallToBackend('GET', '/settings', async, function(response) {				
+				configuration.temperatureUpdateIntervalSeconds = response['store_temperature_interval_seconds'];				
+				configuration.instructionUpdateIntervalSeconds = response['instruction_interval_seconds'];
+				if(onSuccess != undefined) {
+					onSuccess(response);
+				}
+			});
 		},
 		
 		/*
 		 * removes whatever temperature override was set, and allows instructions to dictate
 		 */
-		removeTemperatureOverride : function() {
+		removeTemperatureOverride : function(onSuccess) {
 			formData = 'override=False';
 			this.makeAjaxCallToBackend('POST', '/temperature/target', true, function() {
-				view.alert('Temperature override removed.');
+				overlay.alert('Temperature override removed.');
+				if(onSuccess != undefined) {
+					onSuccess();
+				}
 			}, function(xhr, status, error) {
-				view.alert('Could not remove temperature override: ' + xhr.responseText + ".");
+				overlay.alert('Could not remove temperature override: ' + xhr.responseText + ".");
 			}, formData);
 		},
 		
 		/*
 		 * overrides the temperature setting with the given temp value
 		 */
-		setTemperatureOverride : function(temperatureCelsius) {
+		setTemperatureOverride : function(temperatureCelsius, onSuccess) {
 			formData = 'target_temperature_C=' + temperatureCelsius;
 			this.makeAjaxCallToBackend('POST', '/temperature/target', true, function() {
-				view.alert('Temperature override succesfully set.');
+				overlay.alert('Temperature override succesfully set.');
+				if(onSuccess != undefined) {
+					onSuccess();
+				}
 			}, function(xhr, status, error) {
-				view.alert('Could not set temperature override: ' + xhr.responseText + ".");
+				overlay.alert('Could not set temperature override: ' + xhr.responseText + ".");
 			}, formData);
 		},
 
@@ -108,7 +135,7 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 		/*
 		 * stores json information in the model about the state of the freezer and the cooler
 		 */
-		updateDeviceInfo : function(onSuccess) {			
+		updateDevices : function(onSuccess) {			
 			this.makeAjaxCallToBackend('GET', '/device', true, function(response) {				
 				model.devices = response;				
 				if(onSuccess != undefined) {
@@ -120,22 +147,24 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 		/*
 		 * stores json information in the model about the instructions
 		 */
-		updateInstructions : function(onSuccess) {
-			reference = this;
-			this.makeAjaxCallToBackend('GET', '/instruction', true, function(response) {				
-				model.instructions = response;				
-				reference.updateActiveInstruction(onSuccess);				
+		updateInstructions : function(onSuccess) {			
+			this.makeAjaxCallToBackend('GET', '/instruction', false, function(response) {				
+				model.instructions = response;
 			});
+			this.updateActiveInstruction(onSuccess);
 		},
 		
 		/*
 		 * deletes the given instruction by its id
 		 */
-		deleteInstruction : function(instructionId) {
+		deleteInstruction : function(instructionId, onSuccess) {
 			this.makeAjaxCallToBackend('DELETE', '/instruction/' + instructionId, true, function() {
-				view.alert('Instruction #' + instructionId + ' deleted.');
+				overlay.alert('Instruction #' + instructionId + ' deleted.');
+				if(onSuccess != undefined) {
+					onSuccess();
+				}
 			}, function(xhr, status, error) {
-				view.alert('Could not delete instruction: ' + xhr.responseText + ".");
+				overlay.alert('Could not delete instruction: ' + xhr.responseText + ".");
 			});
 		},
 		
@@ -159,30 +188,36 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 			this.makeAjaxCallToBackend('PUT', '/probe/' + probe.probe_id, true, function() {
 				// do nothing on success, probes are updated in batches
 			}, function(xhr, status, error) {
-				view.alert('Could not update probe: ' + xhr.responseText + ".");
+				overlay.alert('Could not update probe: ' + xhr.responseText + ".");
 			}, formData);
 		},
 		
 		/*
 		 * PUTs data to update an instruction
 		 */
-		updateInstruction : function(formData, instruction_id) {
+		updateInstruction : function(formData, instruction_id, onSuccess) {
 			console.log('updating with: ' + formData)
 			this.makeAjaxCallToBackend('PUT', '/instruction/' + instruction_id, true, function() {
-				view.alert('Instruction successfully updated.');
+				overlay.alert('Instruction successfully updated.');
+				if(onSucccess != undefined) {
+					onSuccess();
+				}
 			}, function(xhr, status, error) {
-				view.alert('Could not update instruction: ' + xhr.responseText + ".");
+				overlay.alert('Could not update instruction: ' + xhr.responseText + ".");
 			}, formData);
 		},
 		
 		/*
 		 * POSTs the form data to create a new instructions
 		 */
-		createNewInstruction : function(formData) {			
+		createNewInstruction : function(formData, onSuccess) {			
 			this.makeAjaxCallToBackend('POST', '/instruction', true, function() {
-				view.alert('Instruction successfully created.');
+				overlay.alert('Instruction successfully created.');
+				if(onSuccess != undefined) {
+					onSuccess();
+				}
 			}, function(xhr, status, error) {
-				view.alert('Could not create instruction: ' + xhr.responseText + ".");
+				overlay.alert('Could not create instruction: ' + xhr.responseText + ".");
 			}, formData);
 		},
 
@@ -192,8 +227,8 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 		 */
 		doAfterSignin : function(username, password, onSuccess) {
 			$('#login-button').button('loading');
-			config.username = username;
-			config.password = password;
+			configuration.username = username;
+			configuration.password = password;
 			// make a dummy call to the probe service, if its succesful then log in, otherwise error
 			this.makeAjaxCallToBackend('GET', '/probe', true, function(response) {
 				onSuccess();
@@ -203,7 +238,7 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 				if (xhr.status == 401) {
 					message += '. Your IP is logged and an administrator has been notified.'
 				}
-				view.alert(message);
+				overlay.alert(message);
 			});
 		}, 
 		
@@ -211,14 +246,46 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'view' ], function($, util
 		 * calls the chestfreezer service and requests the temperatures from the given time periods, which are then
 		 * stored into the model.
 		 */
-		updateTemperaturesForTime : function(fromMillis, toMillis, doWithTemperatureReading) {			
+		updateTemperaturesForTime : function(fromMillis, toMillis, doWithTemperatureReading, doFinally) {			
 			targetUrl = '/temperature?start=' + fromMillis + '&end=' + toMillis;
 			this.makeAjaxCallToBackend('GET', targetUrl, true, function(response) {
 				for(var n in response) {
 					tempReading = response[n];
 					doWithTemperatureReading(tempReading);					
 				}
+				if(doFinally != undefined) {
+					doFinally();
+				}
 			});
-		}
+		},
+		
+		/*
+		 * calls the API endpoint to wipe all the temperatures in the DB
+		 */
+		deleteTemperatures : function(onSuccess) {
+			this.makeAjaxCallToBackend('DELETE', '/temperature', true, function(response) {
+				if(onSuccess != undefined) {
+					onSuccess();
+				}
+			});
+		},
+		
+		/*
+		 * updates the server's settings
+		 */
+		updateSettings: function(temperatureToleranceC, onSuccess) {
+			formData = "store_temperature_interval_seconds=" + configuration.temperatureUpdateIntervalSeconds;
+			formData += "&instruction_interval_seconds=" + configuration.instructionUpdateIntervalSeconds;
+			if(temperatureTolerance != undefined) {
+				formData += "&temperature_tolerance_C=" + temperatureToleranceC; 
+			}
+			this.makeAjaxCallToBackend('POST', '/settings', true, function(response) {
+				if(onSuccess != undefined) {
+					onSuccess();
+				}
+			}, function(xhr, status, error) {
+				overlay.alert('Could not update options: ' + xhr.responseText + ".");
+			}, formData);
+		},
 	}
 });

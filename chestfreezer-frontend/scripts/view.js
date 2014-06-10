@@ -1,20 +1,16 @@
 /*
  * Various methods that connect to the view of the app
  */
-define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handlebars', 'hbs!../templates/login', 'hbs!../templates/header', 'hbs!../templates/device', 
-        'hbs!../templates/instructionsPanel', 'hbs!../templates/probePanel', 'hbs!../templates/logPanel'], 
-		function($, logger, utils, bootbox, chartjs, canvasjs, Handlebars, login, header, device, instructions, probes, log) {
+define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handlebars', 'hbs!../templates/login', 
+        'hbs!../templates/header', 'hbs!../templates/device', 'hbs!../templates/instructionsPanel', 'hbs!../templates/probePanel', 'hbs!../templates/logPanel', 
+        'hbs!../templates/settingsPanel', 'hbs!../templates/beerTracker'], 
+		function($, logger, model, overlay, api, configuration, utils, bootbox, chartjs, canvasjs, Handlebars, login, header, device, instructions, probes, 
+				log, settings, beerTracker) {
   return {
 	  
 	  chart : {}, // reference to the canvasJS chart
 	  showLogInterval : {}, // handle to stop the log monitor
-	  
-	  /*
-		 * displays an alert box using bootbox
-		 */
-	  alert : function(message) {
-		  bootbox.alert(message);
-	  },
+	  overlay : overlay, // its convenient to have a reference here
 	  
 	  /*
 		 * shows the main page and sets the username in the header
@@ -22,8 +18,14 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 	  showMainPageForUser : function(givenUsername) {
 		  $('#main-page').show();
 		  $('#header').html(header({username : givenUsername}));
-	  },
+	  },	  
 	  
+	  /*
+	   * displays an alert overlay
+	   */
+	  alert : function(message) {
+		  overlay.alert(message);
+	  },
 
 	  /*
 	   * initialize the temp gauge using the chartjs library
@@ -63,7 +65,7 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 	  },
 	  
 	  /*
-	   * initializes and reders the canvas.js chart, also stored a reference
+	   * initializes and renders the canvas.js chart in our html. Also stores a reference.
 	   */
 	  initializeChart : function(chartData) {		  
 		  var chart = new CanvasJS.Chart("temperature-chart", {
@@ -72,10 +74,10 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 					text : "Temperature Readings"
 				},
 				toolTip : {
-					shared : true
+					shared : true,					
 				},
 				axisY : {
-					suffix : ' ℃',
+					suffix : " ℃",
 					includeZero : false
 				},
 				data : chartData
@@ -83,23 +85,7 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 			this.chart = chart; 
 			chart.render();
 	  },
-	  
-	  /*
-	   * displays the target temp information in the gauge and the status panel
-	   */
-	  setTargetTemperature : function(targetTemperature, isOverride) {
-		  this.enableTemperatureOverridePanel(isOverride)
-		  $("#taget-temperature-checkbox").prop('checked', isOverride);
-		  if(isOverride) {			  
-			  $("#taget-temperature-textfield").val(targetTemperature);			  
-		  }
-		  if(targetTemperature) {		
-			  $('#temperature-gauge').dxCircularGauge('instance').subvalues([targetTemperature]);
-		  } else {
-			  $('#temperature-gauge').dxCircularGauge('instance').subvalues([]);			  			  
-		  }			  
-	  },
-	  
+	  	  
 	  /*
 	   * enables or disabels the temp override textarea + button 
 	   */
@@ -122,19 +108,73 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 	  },
 	  
 	  /*
-	   * updates the text and the dropdown menu of the heater + freezer html
+	   * Polls the server for the state of the heater + freezer and then updates the view (texts, dropdowns etc) using the template
 	   */
-	  updateDevices : function(deviceJson) {		  		  
-		  freezerHtml = device({
-			  status: deviceJson['freezer'],
-			  deviceName: 'Freezer'
+	  updateDevices : function() {
+		  api.updateDevices(function() {		  
+			  freezerHtml = device({
+				  status: model.devices['freezer'],
+				  deviceName: 'Freezer'
+			  });
+			  $('#freezer-status').html(freezerHtml);
+			  heaterHtml = device({
+				  status: model.devices['heater'],
+				  deviceName: 'Heater'
+			  });
+			  $('#heater-status').html(heaterHtml);
 		  });
-		  $('#freezer-status').html(freezerHtml);
-		  heaterHtml = device({
-			  status: deviceJson['heater'],
-			  deviceName: 'Heater'
+	  },
+	  
+	  /*
+	   * calls the server to update both instructions & the target temperature 
+	   */
+	  updateInstructionsAndTargetTemperature : function() {
+		  this.updateInstructions();
+		  this.updateTargetTemperature();
+	  },
+	  
+	  /*
+	   * gets the target temperature and updates the gauge as well as the status panel
+	   */
+	  updateTargetTemperature : function() {
+		  reference = this;
+		  api.getTargetTemperature(function(targetTemperature, isOverride) {			  
+			  reference.enableTemperatureOverridePanel(isOverride)
+			  $("#taget-temperature-checkbox").prop('checked', isOverride);
+			  if(isOverride) {			  
+				  $("#taget-temperature-textfield").val(targetTemperature);			  
+			  }
+			  if(targetTemperature) {		
+				  $('#temperature-gauge').dxCircularGauge('instance').subvalues([targetTemperature]);
+			  } else {
+				  $('#temperature-gauge').dxCircularGauge('instance').subvalues([]);			  			  
+			  }	
 		  });
-		  $('#heater-status').html(heaterHtml);
+	  },
+	  
+	  /*
+	   * calls the server to update the instructions, active and non-active 
+	   */
+	  updateInstructions : function() {		  
+		  api.updateInstructions(function() {			  
+			  if($('#instruction-menu-button').hasClass('active')) {
+				  var template = instructions({instructions:model.instructions});		   
+				  $('#content').html(template);			  
+				  $('#datetime-from').datetimepicker({
+					  pickTime: false
+				  });
+				  $('#datetime-to').datetimepicker({
+					  pickTime: false
+				  });
+			  }
+			  var text = 'No active instruction';		  
+			  if(model.active_instruction != undefined) {
+				  prettyUntil = utils.getUnixTimestampAsPrettyDate(model.active_instruction.to_timestamp);
+				  text = 'Maintain ' + model.active_instruction.target_temperature_C + '℃ until ' + prettyUntil + '';
+			  }
+			  var template = Handlebars.compile('<span class="status-text instruction-text"><em>{{ instructionText }}</em></<span>');
+			  $('#active-instruction').html(template({instructionText:text}));
+		  });
 	  },
 	  
 	  /*
@@ -162,9 +202,16 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 	  },
 	  
 	  /*
+	   * self-exlanatory
+	   */
+	  scrollDown : function() {
+		  $('html, body').animate({scrollTop: $(document).height()}, 'fast');
+	  },
+	  	  
+	  /*
 	   * highlights the given button, while removing highlight from the other ones
 	   */
-	  setActiveMenuButton : function(button) {
+	  setActiveMenuButton : function(button) {		  
 		  $('#content').html('');
 		  $('.chestfreezer-menu-button').removeClass('active');
 		  $(button).toggleClass('active');		  
@@ -174,7 +221,7 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 	  },
 	  
 	  /*
-	   * sets the fields in the instruction form from the given instruction object
+	   * sets the fields in the instruction form from the provided instruction object
 	   */
 	  setInstructionForm : function(instruction) {
 		  //first the button
@@ -183,7 +230,7 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 			  instruction = {};
 		  } else {
 			  $('#save-instruction').html('Update');
-		  }		  
+		  }
 		  $('#targetTemperature').val(instruction.target_temperature_C);
 		  $('#description').val(instruction.description);
 		  datetimeFrom = utils.getUnixTimestampAsPrettyDate(instruction.from_timestamp);
@@ -202,27 +249,23 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 	  /*
 	   * displays the instruction panel with the given instructions as a table 
 	   */
-	  showInstructions : function(allInstructions) {		  
-		  if($('#instruction-menu-button').hasClass('active')) {
-			  var template = instructions({instructions:allInstructions});		   
-			  $('#content').html(template);			  
-			  $('#datetime-from').datetimepicker({
-				  pickTime: false
-			  });
-			  $('#datetime-to').datetimepicker({
-				  pickTime: false
-			  });
-		  }		  
+	  showInstructions : function() {		  
+		  	  
 	  },
 	  
 	  /*
-	   * displays the probe panel 
+	   * updates probe information from the server and then displays them in the probe panel 
 	   */
-	  showProbes: function(allProbes) {		  
-		  if($('#probe-menu-button').hasClass('active')) {
-			  var template = probes({probes:allProbes});		   
-			  $('#content').html(template);
-		  }		  
+	  showProbes: function(onSuccess) {
+		  api.updateProbeInfo(function() {
+			  if($('#probe-menu-button').hasClass('active')) {
+				  var template = probes({probes:model.probes});		   
+				  $('#content').html(template);
+			  }
+			  if(onSuccess != undefined) {
+				  onSuccess();
+			  }
+		  });		  	  
 	  },
 	  
 	  /*
@@ -256,10 +299,42 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 			  $('#content').html(template);			  
 			  this.setLogTextareaText(logger.getAll());
 			  this.showLogInterval = setInterval(function() {
-				  reference.refreshLog();
-			  }, 1000);
-		  }		  
+				  try {
+					  reference.refreshLog();
+				  } catch(error) {
+					  // swallow it. I cannot understand this bug.
+				  }
+			  }, 1000);			 
+			  $('#dont-show-temp-updates').prop('checked', logger.dontShowTemperatureEvents);
+		  }
 	  },
+	  
+	  /*
+	   * retrieves the setttings from the backend and displays them in the template
+	   */
+	  showSettings : function() {
+		  api.getSettings(function(response) {			  
+			  var settingsDisplay = {
+				  store_temperature_interval_seconds: configuration.temperatureUpdateIntervalSeconds,
+				  temperature_tolerance_C: response.temperature_tolerance_C,
+				  instruction_interval_seconds: configuration.instructionUpdateIntervalSeconds,
+				  devicesUpdateIntervalSeconds: configuration.devicesUpdateIntervalSeconds,
+				  daysPastToShowInChart: configuration.daysPastToShowInChart,
+				  databaseCurrentSize: response.database_size_MB,
+				  databaseMaxSize: response.database_size_MB + response.database_free_size_MB
+			  }
+			  var template = settings({settings:settingsDisplay});		   
+			  $('#content').html(template);  
+		  });
+	  },
+	  
+	  /*
+	   * shows the beer tracker tab, with the beers-in-development, their history and all that
+	   */
+	  showBeerTracker: function() {
+		  //var template = beerTracker({settings:settingsDisplay});
+		  $('#content').html(beerTracker);
+	  },	  
 	  
 	  /*
 	   * sets the given text to the log textarea and scrolls all the way down 
@@ -275,27 +350,6 @@ define(['jquery', 'log', 'utils', 'bootbox', 'chartjs', 'canvasjs', 'hbs/handleb
 	   */
 	  refreshLog: function() {		  
 		  this.setLogTextareaText(logger.getAll());
-	  },
-	  
-	  /*
-	   * displays the given instruction as the "active" one
-	   */
-	  displayActiveInstruction : function(activeInstruction) {		  
-		  var text = 'No active instruction';
-		  if(activeInstruction != undefined) {
-			  prettyUntil = utils.getUnixTimestampAsPrettyDate(activeInstruction.to_timestamp);
-			  text = 'Will maintain ' + activeInstruction.target_temperature_C + '℃ until ' + prettyUntil + '';
-		  }
-		  var template = Handlebars.compile('<span class="status-text instruction-text"><em>{{ instructionText }}</em></<span>');
-		  $('#active-instruction').html(template({instructionText:text}));		  
-	  }
+	  }	  
   }
 });
-
-
-
-
-
-
-
-

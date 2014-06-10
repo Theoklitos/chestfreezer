@@ -9,6 +9,7 @@ configuration
 *~
 sessions/
 accessLog
+todo-list
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
