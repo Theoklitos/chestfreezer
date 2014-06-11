@@ -1,0 +1,55 @@
+<div class="col-md-3 col-md-offset-4 content-row">
+	{{#with settings}}
+	<form class="form-horizontal" role="form">
+		<div class="form-group">
+			<label for="temperature-interval" class="col-sm-9 control-label">Temperature
+				Update Time (seconds):</label>
+			<div class="col-sm-3">
+				<input type="text" class="form-control" id="temperature-interval"
+					value="{{ store_temperature_interval_seconds }}">
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="temperature-tolerance" class="col-sm-9 control-label">Temperature
+				Tolerance (Celsius):</label>
+			<div class="col-sm-3">
+				<input type="text" class="form-control" id="temperature-tolerance"
+					value="{{ temperature_tolerance_C }}">
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="instruction-interval" class="col-sm-9 control-label">Instruction
+				Update Time (seconds):</label>
+			<div class="col-sm-3">
+				<input type="text" class="form-control" id="instruction-interval"
+					value="{{ instruction_interval_seconds }}">
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="device-interval" class="col-sm-9 control-label">Device State
+				Update Time (seconds):</label>
+			<div class="col-sm-3">
+				<input type="text" class="form-control" id="device-interval"
+					value="{{ devicesUpdateIntervalSeconds }}">
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="chart-history" class="col-sm-9 control-label">Chart History
+				(days):</label>
+			<div class="col-sm-3">
+				<input type="text" class="form-control" id="chart-history"
+					value="{{ daysPastToShowInChart }}">
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-12 control-label">Database Size: {{ databaseCurrentSize }}MB </label>			
+		</div>
+		
+	</form>
+	{{/with}}	
+</div>
+<div id="settings-buttons" class="col-md-6 col-md-offset-3 content-row settings-button-panel">
+	<button id="update-settings" type="submit" class="btn btn-default">Update Settings</button>
+	<button id="delete-temperature-readings" type="submit"
+		class="btn btn-default">Delete All Temperature Readings</button>
+</div>
