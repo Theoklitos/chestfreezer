@@ -49,7 +49,6 @@ function pushTempReadingIntoDatapoints(model, utils, tempReading) {
 			dataForProbe.dataPoints.push({
 				x : timestamp,
 				y : parseFloat(tempReading.temperature_C),
-				label: new Date(timestamp),
 			});
 		}
 	}
@@ -119,7 +118,7 @@ function startDeviceUpdateThread(api, view, model, utils, config, log) {
 /*
  * sets the event for when the user toggles the device state in the dropdown
  */
-function setDeviceDropdownEvent(api, log, deviceName) {
+function setDeviceDropdownEvent(api, view, log, deviceName) {
 	var element = $('#' + deviceName + '-selector');
 	$(document).on('change', '#' + deviceName + '-selector', function() {
 		value = $(this).val();
@@ -164,8 +163,8 @@ function setStatusPanelEvents(api, view, utils, log) {
 		}
 	});
 	// also set the dropdown events
-	setDeviceDropdownEvent(api, log, 'freezer');
-	setDeviceDropdownEvent(api, log, 'heater');
+	setDeviceDropdownEvent(api, view, log, 'freezer');
+	setDeviceDropdownEvent(api, view, log, 'heater');
 }
 
 /*
@@ -174,7 +173,7 @@ function setStatusPanelEvents(api, view, utils, log) {
 function setInstructionEvents(api, view, model, utils, log) {	
 	$('#instruction-menu-button').click(function() {
 		view.setActiveMenuButton(this);
-		view.updateInstructions();
+		view.showInstructions();
 		view.scrollDown();
 		return false;
 	});
@@ -183,7 +182,7 @@ function setInstructionEvents(api, view, model, utils, log) {
 	});
 	// the table row select event
 	$(document).on('click', '#instructions-table tbody tr', function(event) {		
-		view.setInstructionRowHighlighted($(this));		
+		view.setRowHighlighted($(this), true);		
 		if ($(this).attr('class').indexOf('table-highlight') > -1) { // if its selected
 			model.selected_instruction_id = $('.table-highlight').children('.id-cell').html();
 			var selectedInstruction = utils.getInstructionForId(model.selected_instruction_id);
@@ -199,16 +198,15 @@ function setInstructionEvents(api, view, model, utils, log) {
 			formData = utils.evaluateInstructionFormAndGetData();			
 			if (model.selected_instruction_id == undefined) {
 				api.createNewInstruction(formData, function() {
-					view.updateInstructions();
+					view.showInstructions();
 					log.log('New instruction created');
 				});				
 			} else {
 				api.updateInstruction(formData, model.selected_instruction_id, function() {
-					view.updateInstructions();
+					view.showInstructions();
 					log.log('instruction #' + model.selected_instruction_id + ' updated');
 				});				
-			}	
-			// view.setActiveMenuButton($('#instruction-menu-button')); why was this here?
+			}
 		} catch (e) {
 			// some sort of validation error
 			view.alert(e);
@@ -326,6 +324,7 @@ function setSettingsEvents(api, view, model, utils, config, log) {
 			config.daysPastToShowInChart = newDaysPast;
 		}
 		api.updateSettings(temperatureTolerance, function() {
+			view.alert('Updated settings.')
 			log.log('Updated settings');			
 			view.showSettings();
 			if(daysPastChanged) {
@@ -341,10 +340,92 @@ function setSettingsEvents(api, view, model, utils, config, log) {
  */
 function setBeerTrackerEvents(api, view, model, utils, config, log) {
 	$('#beertracker-menu-button').click(function() {
+		model.beer_ids_to_update = [];
 		view.setActiveMenuButton(this);
 		view.showBeerTracker();
+		view.scrollDown();
 		return false;
 	});
+	$(document).on('keypress', '#beer-table tbody td', function(e) {
+		//do nothing on enter
+	    if (e.keyCode === 13) { 
+	    	$(this).blur();
+	    	return false;
+	    } else if($(this).hasClass('ratings-cell')) { // ratings cell only numbers	    	
+	    	if (event.which < 46 || event.which > 59) {
+	    		event.preventDefault();	    		 
+	    	} 
+	    }
+	});	
+	// format the ratings cell
+	$(document).on('blur', '#beer-table .ratings-cell', function(e) {
+		cell = $(this);
+		if(parseInt(cell.html()) < 0) {
+			cell.html("0")
+    	} if(parseInt(cell.html()) > 10) {
+    		cell.html("10")
+    	} else {
+    		parsedValue = parseInt(cell.html());
+    		cell.html(parsedValue)
+    	}    	
+	});
+	// show a textarea prompt for the comments
+	$(document).on('click', '#beer-table .comments-cell', function(e) {
+		cell = $(this);
+		view.showPrompt('Comment on this beer:', function(message) {
+			if(!message) {
+				message = "No comments"
+			}
+			cell.html(message);
+    	});
+	});
+	// the table row select event
+	$(document).on('click', '#beer-table tbody tr', function(event) {		
+		view.setRowHighlighted($(this), false);
+		if ($(this).attr('class').indexOf('table-highlight') > -1) { // if its selected
+			model.selected_beer_id = $('.table-highlight').children('.id-cell').html();			
+			var selectedBeer = utils.getBeerForId(model.selected_beer_id);
+			$('#delete-beer-button').attr('value', 'Delete beer "' + selectedBeer.name + '"')
+			$('#delete-beer-button').prop('disabled',false)
+			utils.addSelectedBeerId(model.selected_beer_id)
+		} else {
+			model.selected_beer_id = undefined;
+			$('#delete-beer-button').attr('value', 'Delete...')
+			$('#delete-beer-button').prop('disabled',true)
+		}
+	});
+	$(document).on('click', '#update-beers-button', function() {
+		for (var n = 0; n < model.beer_ids_to_update.length; n++) {			
+			beerToUpdate = utils.getBeerFromTableRow(model.beer_ids_to_update[n]);
+			console.log(beerToUpdate)
+			isLastBeer = (n == model.beer_ids_to_update.length-1);
+			api.modifyBeer(function() {
+				log.log('Beer "' + beerToUpdate.name + '" updated');				
+				if(isLastBeer) {
+					// last element, show message
+					view.alert('Beer(s) succesfully updated.');
+				}
+			},beerToUpdate);
+		}
+	});
+	$(document).on('click', '#create-beer-button', function() {
+		view.showPrompt("Give a name for this beer:", function(beerName) {
+			api.createBeer(function() {
+				view.alert('New beer succesfully created.')
+				log.log('Beer "' + beerName + '" created');
+				view.showBeerTracker();
+			}, beerName);
+		});		
+	});
+	$(document).on('click', '#delete-beer-button', function() {
+		if(model.selected_beer_id != undefined) {
+			api.deleteBeer(function() {
+				view.alert('Beer deleted.')
+				log.log('Beer #' + model.selected_beer_id + ' deleted');
+				view.showBeerTracker();
+			}, model.selected_beer_id);
+		}
+	});	
 }
 
 /*

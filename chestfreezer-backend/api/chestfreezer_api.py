@@ -455,6 +455,15 @@ def get_all_beers():
     response.content_type = 'application/json'
     return json_parser.get_all_beers_as_json()
 
+@bottle.delete(API_ROOT + '/beer/<beer_id>', apply=[chestfreezer_call_decorator, enable_cors])
+def delete_beer(beer_id):
+    try:
+        beer = db_adapter.get_beer_by_id(beer_id)
+        db_adapter.delete_beer_by_name(beer.name)
+        response.status = 204
+    except BeerException:
+        abort(404, 'Beer with id "' + beer_id + '" does not exist')
+        
 @bottle.put(API_ROOT + '/beer/<beer_id>', apply=[chestfreezer_call_decorator, enable_cors])
 def modify_beer(beer_id):
     try:
@@ -487,7 +496,7 @@ def modify_beer(beer_id):
     try:
         beer._verifyDataMakeSense();
         db_adapter.store_beer(beer)
-        response.status = 200
+        response.status = 204
     except BeerException as e:
         abort(400, str(e))
     
@@ -500,7 +509,7 @@ def create_beer():
     except BeerException:
         new_beer = brew_logic.Beer(beer_name, "Undefined", -1, -1, -1, -1, 0)
         db_adapter.store_beer(new_beer);
-        response.status = 201
+        response.status = 204
 ####################################################################################################################
 
 

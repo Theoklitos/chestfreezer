@@ -72,7 +72,7 @@ class Beer():
     def _verifyDataMakeSense(self):
         """ makes sure that fermenting is before conditioning, and those intervals don't overlap. Also makes sure that rating is [0,10]. Throws BeerException """
         if (self.fermenting_from_timestamp > self.fermenting_to_timestamp) | (self.conditioning_from_timestamp > self.conditioning_to_timestamp):            
-            raise BeerException('A date start timestamp is after its ending date')
+            raise BeerException('A "start" date is after its matching "end" date')
         if self.fermenting_to_timestamp > self.conditioning_from_timestamp:
             raise BeerException('Fermentation date is after conditioning date')
         if hasattr(self, 'rating'):

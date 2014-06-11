@@ -5,6 +5,7 @@ define({
 		devices : [],
 		probes : [],
 		instructions : [],
+		beers : [],
 		active_instruction : {},
 		chartData : []
 });

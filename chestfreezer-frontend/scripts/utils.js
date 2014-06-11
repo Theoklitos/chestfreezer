@@ -113,13 +113,35 @@ define([ 'jquery', 'Base64', 'model', 'moment' ], function($, Base64, model, mom
 		},
 		
 		/*
+		 * returns the formatted date as a unix timestamp 
+		 */
+		getDateAsUnixTimestamp: function(date) {			
+			if(date == 'Undefined') {
+				return -3600;
+			} else {
+				return moment(date, 'DD/MM/YYYY').unix();
+			}			
+		},
+		
+		/*
 		 * returns the given timestamp as a pretty (human) readable string
+		 */
+		getUnixTimestampAsPrettyDateTime : function(timestamp) {
+			if (timestamp == undefined) {
+				return "";
+			} else {
+				return moment(new Date(timestamp * 1000)).format('DD/MM/YYYY h:mm A');
+			}
+		},
+		
+		/*
+		 * returns the given timestamp as a pretty (human) readable string - no time, only date
 		 */
 		getUnixTimestampAsPrettyDate : function(timestamp) {
 			if (timestamp == undefined) {
 				return "";
 			} else {
-				return moment(new Date(timestamp * 1000)).format('DD/MM/YYYY h:mm A');
+				return moment(new Date(timestamp * 1000)).format('DD/MM/YYYY');
 			}
 		},
 
@@ -140,6 +162,67 @@ define([ 'jquery', 'Base64', 'model', 'moment' ], function($, Base64, model, mom
 				}
 			}
 			return {};
+		},
+		
+		/*
+		 * looks up the beer for the given id, and returns it 
+		 */
+		getBeerForId : function(id) {			
+			for(var n in model.beers) {
+				if(model.beers[n].beer_id == id) {					
+					return model.beers[n];
+				}
+			}
+			return {};
+		},
+		
+		/*
+		 * adds the id to the beers in the model, but only if its unique
+		 */
+		addSelectedBeerId : function(selectedBeerId) {			
+			for(var n = 0; n < model.beer_ids_to_update.length; n++) {
+				if(model.beer_ids_to_update[n] == selectedBeerId) {
+					return;
+				}
+			}
+			model.beer_ids_to_update.push(selectedBeerId)
+		},
+	
+		/*
+		 * creates a json object out of the given beer id row, if any
+		 */
+		getBeerFromTableRow : function(id) {
+			var utilsReference = this;
+			var beer = undefined;
+			if($('#beer-table').length != 0) {				
+				$('#beer-table tr').each(function (i, row) {
+					$(row).find('td').each(function (n) {
+						value = $(this).html();
+						if(n == 0 && (value == id)) {							
+							beer = {};			
+							beer['beer_id'] = id;
+						} else if(n == 1 && beer !=undefined) {
+							beer['name'] = value;
+						} else if(n == 2 && beer !=undefined) {
+							beer['style'] = value;
+						} else if(n == 3 && beer !=undefined) {
+							beer['fermenting_from'] = utilsReference.getDateAsUnixTimestamp(value);
+						} else if(n == 4 && beer !=undefined) {
+							beer['fermenting_to'] = utilsReference.getDateAsUnixTimestamp(value);
+						} else if(n == 5 && beer !=undefined) {
+							beer['conditioning_from'] = utilsReference.getDateAsUnixTimestamp(value);
+						} else if(n == 6 && beer !=undefined) {
+							beer['conditioning_to'] = utilsReference.getDateAsUnixTimestamp(value);
+						} else if(n == 7 && beer !=undefined) {
+							beer['rating'] = parseInt(value);
+						} else if(n == 8 && beer !=undefined) {
+							beer['comments'] = value;
+							return false;
+						} 
+					});
+				});				 
+			}
+			return beer;
 		},
 
 		/*

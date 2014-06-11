@@ -5,7 +5,7 @@ Chestfreezer
 
 A small python web application that is meant to be run in a raspberry-pi connected to a beer brewing system. 
 This requires a raspberry with have 1 to 10 DS18B20 temperature sensor(s) and 2 relays connected to the GPIO 
-pins.A rough guide on how this system was built can be found [in my blog](http://beerdeveloper.wordpress.com/). 
+pins. A rough guide on how this system was built can be found [in my blog](http://beerdeveloper.wordpress.com/). 
 
 
 Overview
@@ -58,7 +58,7 @@ Frontend
 --------
 A small javascript single page app that uses requirejs, bootstrap and handlebars and some canvasjs graphs polls the server for
 temperature updates and also controls the devices.
-One can compile/minify all the javascript with r.js, by the command <pre>node r.js -o build.js</pre>. This will generate the 
+One can compile/minify all the javascript with r.js, by the command <pre>node r.js -o build.js</pre>This will generate the 
 __chestfreezer-built.js__ file which is significantly smaller and faster to run.
 
 Configuration

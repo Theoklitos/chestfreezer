@@ -12,7 +12,7 @@
 	font-size: 15px;
 }
 
-#instructions-table tbody tr:hover {
+#instructions-table tbody tr:hover, #beer-table tbody tr:hover {
 	background: #88bfc4;
 	color: #0a555c
 }
@@ -37,7 +37,7 @@
 	margin: 10px 0px;
 }
 
-#error-message-panel, .log-checkbox-row, .update-probe-button-row{
+#error-message-panel, .log-checkbox-row, .update-probe-button-row, .beer-button-row {
 	text-align: center;
 }
 

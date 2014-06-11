@@ -131,6 +131,58 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'overlay' ], function($, u
 				}
 			});
 		},
+		
+		/*
+		 * calls the backend and updates the beer list in the model
+		 */
+		updateBeers : function(onSuccess) {
+			this.makeAjaxCallToBackend('GET', '/beer', true, function(response) {				
+				model.beers = response;
+				if(onSuccess != undefined) {
+					onSuccess();
+				}
+			});
+		},
+		
+		/*
+		 * creates a new beer
+		 */
+		createBeer : function(onSuccess, beerName) {
+			formData = "name=" + beerName;
+			this.makeAjaxCallToBackend('POST', '/beer', true, function(response) {
+				if(onSuccess != undefined) {
+					onSuccess();
+				};
+			}, function(xhr, status, error) {
+				overlay.alert('Could not create beer: ' + xhr.responseText);
+			}, formData);
+		},
+		
+		/*
+		 * deletes a beer
+		 */
+		deleteBeer : function(onSuccess, beerId) {
+			this.makeAjaxCallToBackend('DELETE', '/beer/' + beerId, true, function(response) {
+				if(onSuccess != undefined) {
+					onSuccess();
+				}
+			}, function(xhr, status, error) {
+				overlay.alert('Could not delete beer: ' + xhr.responseText + ".");
+			});
+		},
+		
+		/*
+		 * will update the beer object passed in the backend 
+		 */
+		modifyBeer : function(onSuccess, beer) {
+			this.makeAjaxCallToBackend('PUT', '/beer/' + beer.beer_id, true, function(response) {
+				if(onSuccess != undefined) {
+					onSuccess();
+				}
+			}, function(xhr, status, error) {
+				overlay.alert('Could not update beer "' + beer.name + '": ' + xhr.responseText);
+			}, beer);
+		},
 
 		/*
 		 * stores json information in the model about the state of the freezer and the cooler

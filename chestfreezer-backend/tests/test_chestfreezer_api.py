@@ -287,8 +287,15 @@ class TestChestfreezerAPI(unittest.TestCase):
     def test_create_beer(self):
         response = self._call_POST_with_credentials_and_body('http://localhost:8080/chestfreezer/api/beer', '{ "name" : "Crappy Beer" }', 'application/json')[0]
         assert(response.status == 201)
-        assert len(db_adapter.get_all_beers())
+        assert len(db_adapter.get_all_beers()) == 1
         assert db_adapter.get_all_beers()[0].name == 'Crappy Beer'
+    
+    def test_delete_beer(self):
+        beer = brew_logic.Beer('Test Beer', 'Whatever', -1, -1, -1, -1, 4, 'S.M.A.S.H', 1);
+        db_adapter.store_beer(beer)
+        response = self._call_DELETE_with_credentials('http://localhost:8080/chestfreezer/api/beer/1')[0]
+        assert(response.status == 204)
+        assert len(db_adapter.get_all_beers()) == 0
         
     def tearDown(self):
         print '==================== Cleared DB and ended test case ==================\n'

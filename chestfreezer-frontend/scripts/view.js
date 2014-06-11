@@ -13,8 +13,8 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	  overlay : overlay, // its convenient to have a reference here
 	  
 	  /*
-		 * shows the main page and sets the username in the header
-		 */
+	   * shows the main page and sets the username in the header
+	   */
 	  showMainPageForUser : function(givenUsername) {
 		  $('#main-page').show();
 		  $('#header').html(header({username : givenUsername}));
@@ -25,6 +25,19 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	   */
 	  alert : function(message) {
 		  overlay.alert(message);
+	  },
+	  
+	  /*
+	   * shows an overlay window with a prompt message, calls function with the user input
+	   */
+	  showPrompt : function(message, onSuccess) {
+		  bootbox.prompt(message, function(result) {                
+			  if (result === null) {                                             
+			    // dismissed, do nothing                              
+			  } else {
+			    onSuccess(result);                          
+			  }
+		  });
 	  },
 
 	  /*
@@ -68,6 +81,7 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	   * initializes and renders the canvas.js chart in our html. Also stores a reference.
 	   */
 	  initializeChart : function(chartData) {		  
+		  unit = "℃";
 		  var chart = new CanvasJS.Chart("temperature-chart", {
 				zoomEnabled : true,
 				title : {
@@ -75,9 +89,19 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 				},
 				toolTip : {
 					shared : true,					
+				 	content: function(e) {
+				 		var str = '' + new Date(e.entries[0].dataPoint.x)
+				 		str = '<strong>' + str.substring(0, str.length-15) + '</strong>'
+				        for (var i = 0; i < e.entries.length; i++){
+				        	var probeName = e.entries[i].dataSeries.name;
+				        	var hexColor = e.entries[i].dataSeries.color;
+				        	str = str.concat('<br><span style="color:' + hexColor + '">' + probeName + '</span>: ' + e.entries[i].dataPoint.y + unit);
+				        };
+				        return (str);
+				 	},
 				},
 				axisY : {
-					suffix : " ℃",
+					suffix : ' ' + unit,
 					includeZero : false
 				},
 				data : chartData
@@ -129,7 +153,7 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	   * calls the server to update both instructions & the target temperature 
 	   */
 	  updateInstructionsAndTargetTemperature : function() {
-		  this.updateInstructions();
+		  this.showInstructions();
 		  this.updateTargetTemperature();
 	  },
 	  
@@ -153,18 +177,18 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	  },
 	  
 	  /*
-	   * calls the server to update the instructions, active and non-active 
+	   * calls the server to update the instructions, active and non-active, and shows all the instructions 
 	   */
-	  updateInstructions : function() {		  
+	  showInstructions : function() {		  
 		  api.updateInstructions(function() {			  
 			  if($('#instruction-menu-button').hasClass('active')) {
 				  var template = instructions({instructions:model.instructions});		   
 				  $('#content').html(template);			  
 				  $('#datetime-from').datetimepicker({
-					  pickTime: false
+					  pickTime: true
 				  });
 				  $('#datetime-to').datetimepicker({
-					  pickTime: false
+					  pickTime: true
 				  });
 			  }
 			  var text = 'No active instruction';		  
@@ -202,7 +226,7 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	  },
 	  
 	  /*
-	   * self-exlanatory
+	   * self-explanatory
 	   */
 	  scrollDown : function() {
 		  $('html, body').animate({scrollTop: $(document).height()}, 'fast');
@@ -240,19 +264,16 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	  },
 	  
 	  /*
-	   * applies a highlight to the given row in the instructions table 
+	   * applies a highlight to the given selected (clicked-upon) row  
 	   */
-	  setInstructionRowHighlighted : function(row) {
-		  row.toggleClass('table-highlight').siblings().removeClass('table-highlight');
+	  setRowHighlighted : function(row, shouldToggle) {
+		  if(shouldToggle) {
+			  row.toggleClass('table-highlight').siblings().removeClass('table-highlight');
+		  } else {
+			  row.addClass('table-highlight').siblings().removeClass('table-highlight');
+		  }
 	  },
-	  
-	  /*
-	   * displays the instruction panel with the given instructions as a table 
-	   */
-	  showInstructions : function() {		  
-		  	  
-	  },
-	  
+	  	  
 	  /*
 	   * updates probe information from the server and then displays them in the probe panel 
 	   */
@@ -331,9 +352,36 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	  /*
 	   * shows the beer tracker tab, with the beers-in-development, their history and all that
 	   */
-	  showBeerTracker: function() {
-		  //var template = beerTracker({settings:settingsDisplay});
-		  $('#content').html(beerTracker);
+	  showBeerTracker: function(onSuccess) {
+		  api.updateBeers(function() {
+			  if($('#beertracker-menu-button').hasClass('active')) {
+				  var template = beerTracker({beers:model.beers});				  		   
+				  $('#content').html(template);
+			  }
+			  if(onSuccess != undefined) {
+				  onSuccess();
+			  }
+			  $('#beer-table').find('.beer-date-cell').each(function (n) {
+				  cell = $(this)
+				  $(function () {
+					  cell.datetimepicker({
+						  pickTime: false
+					  });
+				  });
+				  $(this).on("dp.show",function (e) {
+					  $(this).siblings().filter(":first").click(); // to select the row
+				  });
+				  $(this).on("dp.change",function (e) {
+					  var date = new Date(e.date._d);
+					  var monthText = date.getMonth();
+					  if(monthText < 10) {
+						  monthText = '0' + monthText;
+					  }					  
+					  var formattedDate = date.getDate() + '/' + monthText + '/' + date.getFullYear();
+					  $(this).html(formattedDate);					  
+				  });
+			  });			  
+		  });		  
 	  },	  
 	  
 	  /*
