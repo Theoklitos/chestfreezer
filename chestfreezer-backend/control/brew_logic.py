@@ -8,9 +8,8 @@ Controls the temperature based on readings and user instructions. Sort of like t
 import database.db_adapter 
 from hardware import chestfreezer_gpio
 from util import configuration, misc_utils, emailer
-import time
 from threading import Thread
-import hardware
+import hardware, datetime, time
 
 instruction_target_temperature_C = None
 temperature_override_C = None
@@ -22,6 +21,8 @@ heater_state = False
 
 instruction_thread_in_waiting = True
 current_instruction_id = None
+
+should_threads_run = True
 
 class Instruction():
     """ an instruction that dictates what the temperature(C) should be, and in which time period it should be so """
@@ -56,32 +57,42 @@ class Instruction():
 
 class Beer():
     """ guess what this class represents! """
-    def __init__(self, name, style, fermenting_from_timestamp, fermenting_to_timestamp, conditioning_from_timestamp, conditioning_to_timestamp, rating = 0, comments = 'No comments', beer_id = 0):
+    def __init__(self, name, style, fermenting_from_timestamp, fermenting_to_timestamp, conditioning_from_timestamp, conditioning_to_timestamp, rating = 0, comments = 'No comments', beer_id = 0, dryhopping_from_timestamp = -1, dryhopping_to_timestamp = -1):
         self.beer_id = beer_id;
         self.name = name;
         self.style = style;
-        self.fermenting_from_timestamp = fermenting_from_timestamp;
-        self.fermenting_to_timestamp  = fermenting_to_timestamp;
-        self.conditioning_from_timestamp = conditioning_from_timestamp;
-        self.conditioning_to_timestamp  = conditioning_to_timestamp;
-        self._verifyDataMakeSense();
+        self.fermenting_from_timestamp = int(fermenting_from_timestamp);
+        self.fermenting_to_timestamp  = int(fermenting_to_timestamp);
+        self.dryhopping_from_timestamp = int(dryhopping_from_timestamp);
+        self.dryhopping_to_timestamp = int(dryhopping_to_timestamp);        
+        self.conditioning_from_timestamp = int(conditioning_from_timestamp);
+        self.conditioning_to_timestamp  = int(conditioning_to_timestamp);        
         self.rating = rating;
-        self.comments = comments;
+        self.comments = comments;        
+        self._verifyDataMakeSense();
     def __str__(self):
-        return 'Beer "' + self.name + '", style: ' + self.style + ', rating: ' + str(self.rating) + '/10. Comments: ' + self.comments + '\nFermenting period: ' + str(misc_utils.get_storeable_date_timestamp(self.fermenting_from_timestamp)) + ' to ' + str(misc_utils.get_storeable_date_timestamp(self.fermenting_to_timestamp)) + '\nConditioning period: ' + str(misc_utils.get_storeable_date_timestamp(self.conditioning_from_timestamp)) + ' to ' + str(misc_utils.get_storeable_date_timestamp(self.conditioning_to_timestamp))
+        dryhopping_text = "";
+        if (self.dryhopping_from_timestamp != -1) & (self.dryhopping_to_timestamp != -1):
+            dryhopping_text = '\nDry hopping from ' + str(misc_utils.get_storeable_date_timestamp(self.dryhopping_from_timestamp)) + ' to ' + str(misc_utils.get_storeable_date_timestamp(self.dryhopping_to_timestamp))                              
+        return 'Beer "' + self.name + '", style: ' + self.style + ', rating: ' + str(self.rating) + '/10. Comments: ' + self.comments + '\nFermenting period: ' + str(misc_utils.get_storeable_date_timestamp(self.fermenting_from_timestamp)) + ' to ' + str(misc_utils.get_storeable_date_timestamp(self.fermenting_to_timestamp)) + '\nConditioning period: ' + str(misc_utils.get_storeable_date_timestamp(self.conditioning_from_timestamp)) + ' to ' + str(misc_utils.get_storeable_date_timestamp(self.conditioning_to_timestamp)) + dryhopping_text
     def _verifyDataMakeSense(self):
         """ makes sure that fermenting is before conditioning, and those intervals don't overlap. Also makes sure that rating is [0,10]. Throws BeerException """
-        if (self.fermenting_from_timestamp > self.fermenting_to_timestamp) | (self.conditioning_from_timestamp > self.conditioning_to_timestamp):            
+        if (self.fermenting_from_timestamp > self.fermenting_to_timestamp) | (self.conditioning_from_timestamp > self.conditioning_to_timestamp) | (self.dryhopping_from_timestamp > self.dryhopping_to_timestamp):            
             raise BeerException('A "start" date is after its matching "end" date')
-        if self.fermenting_to_timestamp > self.conditioning_from_timestamp:
-            raise BeerException('Fermentation date is after conditioning date')
+        if (self.fermenting_to_timestamp > self.conditioning_from_timestamp) & (self.conditioning_from_timestamp != -1) & (self.conditioning_from_timestamp != -3600):
+            raise BeerException('Fermentation date is after the conditioning date')        
+        if (self.fermenting_to_timestamp > self.dryhopping_from_timestamp) & (self.dryhopping_from_timestamp != -1) & (self.dryhopping_from_timestamp != -3600):
+            raise BeerException('Fermentation date is after the dry-hopping date')        
+        if (self.dryhopping_to_timestamp > self.conditioning_from_timestamp) & (self.conditioning_from_timestamp != -1) & (self.conditioning_from_timestamp != -3600):
+            raise BeerException('Dry-hopping date is after the conditioning date')
         if hasattr(self, 'rating'):
             if (self.rating < 0) | (self.rating > 10):
                 raise BeerException('Rating must be between 0 and 10')
 
 def start_instruction_thread():
     """ starts the thread that determines which instruction to follow and when """    
-    def follow_instructions():                
+    def follow_instructions():
+        global has_escalated
         has_escalated = False     
         while True:      
             global instruction_thread_in_waiting
@@ -91,7 +102,7 @@ def start_instruction_thread():
                 if len(instructions) > 1:
                     pretty_date = misc_utils.get_storeable_datetime_timestamp(time.time())
                     instructions_string = ',\n'.join(map(str, instructions))
-                    message = "More than one instruction for time " + pretty_date + ":\n" + instructions_string
+                    message = "More than one instruction for time " + pretty_date + ":\n" + instructions_string                    
                     if not has_escalated:                        
                         emailer.escalate("Instruction error", message)
                         global has_escalated
@@ -144,15 +155,15 @@ def store_instruction_for_unique_time(instruction):
 
 def _set_heater(should_activate):
     """ sets the heater state to on/off directly """
-    if should_activate is not heater_state:
-        global heater_state
+    global heater_state
+    if should_activate is not heater_state:        
         heater_state = should_activate
         chestfreezer_gpio.output_pin(configuration.heater_pin(), not should_activate) 
 
 def _set_freezer(should_activate):
     """ sets the freezer state to on/off directly """
-    if should_activate is not freezer_state:
-        global freezer_state
+    global freezer_state
+    if should_activate is not freezer_state:        
         freezer_state = should_activate
         chestfreezer_gpio.output_pin(configuration.freezer_pin(), not should_activate) 
 
@@ -215,7 +226,66 @@ def start_temperature_control_thread():
     control_temperature_thread = Thread(target=control_temperature, args=())
     control_temperature_thread.daemon = True
     control_temperature_thread.start()
-    
-                    
 
+def _get_current_datetime():                    
+    """ returns the current datetime """
+    return datetime.datetime.now()
+
+def _get_current_hour():
+    """ returns the hour of the day in a 24h format """
+    return _get_current_datetime().hour
+
+def _get_seconds_in_hour():
+    """ self-explanatory """
+    seconds_in_hour = 3600;
+    return seconds_in_hour
+
+def _get_seconds_in_day():
+    """ self-explanatory """
+    seconds_in_day = 86400;
+    return seconds_in_day
+ 
+def _is_time_in_today(time_to_check):
+    """ checks if the given timestamp is inside today """    
+    today_timestamps = misc_utils.get_start_and_end_of_day(_get_current_datetime())
+    #print 'TODAY is time ' + str(time_to_check) + ' between ' + str(today_timestamps[0]) + ' and ' + str(today_timestamps[1])
+    return (time_to_check >= today_timestamps[0]) & (time_to_check < today_timestamps[1])
+
+def _is_time_in_tomorrow(time_to_check):
+    """ checks if the given timestamp is inside the day after today """ 
+    tomorrow_timestamps = misc_utils.get_start_and_end_of_day(_get_current_datetime() + datetime.timedelta(0,misc_utils.SECONDS_IN_DAY)) 
+    return (time_to_check >= tomorrow_timestamps[0]) & (time_to_check < tomorrow_timestamps[1])
+
+def _do_beer_state_email_checks(beer, timestamp, email_function):
+    """ checks the given timestamp if its within today or tomorrow, and calls the email function if so """
+    if _is_time_in_today(timestamp):
+        email_function(beer, False);
+    elif _is_time_in_tomorrow(timestamp):
+        email_function(beer, True);
+
+def start_beer_monitoring_thread():
+    """ starts the thread that sends out email when the beer state changes """
+    def monitor_beers():
+        global should_threads_run
+        while should_threads_run:
+            if (_get_current_hour() == '0') | (_get_current_hour() == 0): # we check the beginning of every day
+                print 'Its time to check whether beer emails are to be sent out!'
+                for beer in database.db_adapter.get_all_beers():                   
+                    # fermentation
+                    _do_beer_state_email_checks(beer,beer.fermenting_from_timestamp, emailer.send_fermentation_email)
+                    # dry-hopping
+                    _do_beer_state_email_checks(beer,beer.dryhopping_from_timestamp, emailer.send_dryhopping_email)
+                    # conditioning    
+                    _do_beer_state_email_checks(beer,beer.conditioning_from_timestamp, emailer.send_conditioning_email)
+                # all done. now sleep until the next day
+                print 'Checks done. Sleeping for one day...'
+                time.sleep(_get_seconds_in_day())
+            else:
+                # print 'Beer check wrong hour (' + str(_get_current_hour()) + '), waiting one more...'
+                # not the correct hour, sleep                    
+                time.sleep(_get_seconds_in_hour())
+    global monitor_beers_thread
+    monitor_beers_thread = Thread(target=monitor_beers, args=())    
+    monitor_beers_thread.daemon = True
+    monitor_beers_thread.start()
 

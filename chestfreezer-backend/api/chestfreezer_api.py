@@ -481,11 +481,16 @@ def modify_beer(beer_id):
     if new_fermenting_from: beer.fermenting_from_timestamp = new_fermenting_from
     new_fermenting_to = _get_integer_value('fermenting_to')
     if new_fermenting_to: beer.fermenting_to_timestamp = new_fermenting_to
+    # dryhopping
+    new_dryhopping_from = _get_integer_value('dryhopping_from')
+    if new_dryhopping_from: beer.dryhopping_from_timestamp = new_dryhopping_from
+    new_dryhopping_to = _get_integer_value('dryhopping_to')
+    if new_dryhopping_to: beer.dryhopping_to_timestamp = new_dryhopping_to
     # conditioning
     new_conditioning_from = _get_integer_value('conditioning_from')
     if new_conditioning_from: beer.conditioning_from_timestamp = new_conditioning_from
     new_conditioning_to = _get_integer_value('conditioning_to')
-    if new_conditioning_to: beer.conditioning_to_timestamp = new_conditioning_to
+    if new_conditioning_to: beer.conditioning_to_timestamp = new_conditioning_to    
     # rating
     new_rating = _get_integer_value('rating')
     if new_rating: beer.rating = new_rating

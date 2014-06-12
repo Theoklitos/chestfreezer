@@ -79,10 +79,12 @@ function fetchTemperatures(api, view, model, utils, startMillis, endMillis, call
  */
 function startInstructionAndTargetTemperatureUpdateThread(api, view, model, config, log) {
 	var threadFunction = function(){
-	    clearInterval(interval);
-	    view.updateInstructionsAndTargetTemperature();
-		log.log('Updated instructions and target temperature');	    
-	    interval = setInterval(threadFunction, config.getInstructionsUpdateIntervalSeconds());
+		if(!config.stopThreads) {
+			clearInterval(interval);
+	    	view.updateInstructionsAndTargetTemperature(true);
+			log.log('Updated instructions and target temperature');	    
+	    	interval = setInterval(threadFunction, config.getInstructionsUpdateIntervalSeconds());
+		}
 	}
 	var interval = setInterval(threadFunction(), config.getInstructionsUpdateIntervalSeconds());	
 }
@@ -92,12 +94,14 @@ function startInstructionAndTargetTemperatureUpdateThread(api, view, model, conf
  */
 function startTemperatureUpdateThread(api, view, model, utils, config, log) {	
 	var threadFunction = function(){		
-	    clearInterval(interval);	    
-	    startMillis = utils.getCurrentUnixTimestamp() - config.temperatureUpdateIntervalSeconds;
-		endMillis = utils.getCurrentUnixTimestamp();
-		fetchTemperatures(api, view, model, utils, startMillis, endMillis);
-		log.log('Updated temperature readings', true);	    
-	    interval = setInterval(threadFunction, config.getTemperatureUpdateIntervalSeconds());
+		if(!config.stopThreads) {
+		    clearInterval(interval);	    
+		    startMillis = utils.getCurrentUnixTimestamp() - config.temperatureUpdateIntervalSeconds;
+			endMillis = utils.getCurrentUnixTimestamp();
+			fetchTemperatures(api, view, model, utils, startMillis, endMillis);
+			log.log('Updated temperature readings', true);		
+			interval = setInterval(threadFunction, config.getTemperatureUpdateIntervalSeconds());
+		}
 	}
 	var interval = setInterval(threadFunction(), config.getTemperatureUpdateIntervalSeconds());
 }
@@ -107,10 +111,12 @@ function startTemperatureUpdateThread(api, view, model, utils, config, log) {
  */
 function startDeviceUpdateThread(api, view, model, utils, config, log) {
 	var threadFunction = function(){
-	    clearInterval(interval);
-	    view.updateDevices();
-		log.log('Updated device state');	    
-	    interval = setInterval(threadFunction, config.getDeviceUpdateIntervalSeconds());
+		if(!config.stopThreads) {
+		    clearInterval(interval);
+		    view.updateDevices();
+			log.log('Updated device state');	    
+		    interval = setInterval(threadFunction, config.getDeviceUpdateIntervalSeconds());
+		}
 	}
 	var interval = setInterval(threadFunction(), config.getDeviceUpdateIntervalSeconds());	
 }
@@ -313,6 +319,10 @@ function setSettingsEvents(api, view, model, utils, config, log) {
 		return false;
 	});
 	$(document).on('click', '#update-settings', function() {
+		if(utils.checkSettingsForm()) {
+			view.alert('Error: One or more setting values are missing.')
+			return false;
+		}
 		config.temperatureUpdateIntervalSeconds = parseInt($('#temperature-interval').val());
 		temperatureTolerance = parseFloat($('#temperature-tolerance').val());
 		config.instructionUpdateIntervalSeconds = parseInt($('#instruction-interval').val());
@@ -324,7 +334,7 @@ function setSettingsEvents(api, view, model, utils, config, log) {
 			config.daysPastToShowInChart = newDaysPast;
 		}
 		api.updateSettings(temperatureTolerance, function() {
-			view.alert('Updated settings.')
+			view.alert('Successfully updated settings.')
 			log.log('Updated settings');			
 			view.showSettings();
 			if(daysPastChanged) {
@@ -353,7 +363,7 @@ function setBeerTrackerEvents(api, view, model, utils, config, log) {
 	    	return false;
 	    } else if($(this).hasClass('ratings-cell')) { // ratings cell only numbers	    	
 	    	if (event.which < 46 || event.which > 59) {
-	    		event.preventDefault();	    		 
+	    		event.preventDefault();	   
 	    	} 
 	    }
 	});	
@@ -362,29 +372,22 @@ function setBeerTrackerEvents(api, view, model, utils, config, log) {
 		cell = $(this);
 		if(parseInt(cell.html()) < 0) {
 			cell.html("0")
-    	} if(parseInt(cell.html()) > 10) {
+    	} else if(parseInt(cell.html()) > 10) {
     		cell.html("10")
+    	} else if (!cell.html()) {
+    		cell.html("0")
     	} else {
     		parsedValue = parseInt(cell.html());
     		cell.html(parsedValue)
     	}    	
 	});
-	// show a textarea prompt for the comments
-	$(document).on('click', '#beer-table .comments-cell', function(e) {
-		cell = $(this);
-		view.showPrompt('Comment on this beer:', function(message) {
-			if(!message) {
-				message = "No comments"
-			}
-			cell.html(message);
-    	});
-	});
 	// the table row select event
-	$(document).on('click', '#beer-table tbody tr', function(event) {		
-		view.setRowHighlighted($(this), false);
-		if ($(this).attr('class').indexOf('table-highlight') > -1) { // if its selected
+	$(document).on('click', '#beer-table tbody tr', function(event) {
+		row = $(this);
+		view.setRowHighlighted(row, false);
+		if (row.attr('class').indexOf('table-highlight') > -1) { // if its selected			
 			model.selected_beer_id = $('.table-highlight').children('.id-cell').html();			
-			var selectedBeer = utils.getBeerForId(model.selected_beer_id);
+			var selectedBeer = utils.getBeerForId(model.selected_beer_id);			
 			$('#delete-beer-button').attr('value', 'Delete beer "' + selectedBeer.name + '"')
 			$('#delete-beer-button').prop('disabled',false)
 			utils.addSelectedBeerId(model.selected_beer_id)
@@ -393,19 +396,26 @@ function setBeerTrackerEvents(api, view, model, utils, config, log) {
 			$('#delete-beer-button').attr('value', 'Delete...')
 			$('#delete-beer-button').prop('disabled',true)
 		}
-	});
-	$(document).on('click', '#update-beers-button', function() {
-		for (var n = 0; n < model.beer_ids_to_update.length; n++) {			
-			beerToUpdate = utils.getBeerFromTableRow(model.beer_ids_to_update[n]);
-			console.log(beerToUpdate)
-			isLastBeer = (n == model.beer_ids_to_update.length-1);
-			api.modifyBeer(function() {
-				log.log('Beer "' + beerToUpdate.name + '" updated');				
-				if(isLastBeer) {
-					// last element, show message
-					view.alert('Beer(s) succesfully updated.');
+		// show a textarea prompt for the comments
+		var cell = $(event.target);		
+		if(cell.hasClass('pruned-comments')) {			
+			existingComments = cell.siblings().first().html();
+			view.showTextAreaPrompt('Comment on this beer:', existingComments, function(message) {
+				if(message == undefined || !message) {
+					message = "No comments"
 				}
-			},beerToUpdate);
+				cell.html(utils.getPrunedText(message));				
+				cell.siblings().first().html(message)
+	    	});
+		} else if(cell.hasClass('ratings-cell')) { // for fancier input
+			cell.html("");
+		}
+	});
+	$(document).on('click', '#update-beers-button', function() {		
+		for (var n = 0; n < model.beer_ids_to_update.length; n++) {			
+			beerToUpdate = utils.getBeerFromTableRow(model.beer_ids_to_update[n]);				
+			isLastBeer = (n == (model.beer_ids_to_update.length-1))
+			updateBeerClosure(api, view, model, utils, log, beerToUpdate, isLastBeer);
 		}
 	});
 	$(document).on('click', '#create-beer-button', function() {
@@ -426,6 +436,23 @@ function setBeerTrackerEvents(api, view, model, utils, config, log) {
 			}, model.selected_beer_id);
 		}
 	});	
+}
+
+/*
+ * used as a closure for when the update beers button is clicked
+ */
+function updateBeerClosure(api, view, model, utils, log, beerToUpdate, isLastBeer) {
+	api.modifyBeer(function() {		
+		log.log('Beer "' + beerToUpdate.name + '" updated');				
+		if(isLastBeer) {
+			// last element, refresh & showmessage
+			api.updateBeers(function(){
+				view.alert('Beer(s) succesfully updated.');					
+				// to update the "delete beer" button
+				utils.clickOnBeerRow(model.selected_beer_id);
+			});					
+		}
+	},beerToUpdate);
 }
 
 /*
@@ -496,16 +523,14 @@ function main(utils, api, model, config, view, log) {
 		log.log('Events set');
 		
 		// start the update threads	
-		startInstructionAndTargetTemperatureUpdateThread(api, view, model, config, log);
-		startDeviceUpdateThread(api, view, model, utils, config, log)		
-		log.log('Main function end');		
+		api.getSettings(function() {
+			log.log('Initialized settings');
+			startInstructionAndTargetTemperatureUpdateThread(api, view, model, config, log);
+			startDeviceUpdateThread(api, view, model, utils, config, log)
+			log.log('Main function end');
+		});				
 	} catch(exception) {
-		// "uncaught" exception! close all overlays and display msg
-		log.log('Uncaught exception!')
-		view.overlay.showLoadingOverlayWholeScreen(false)		
-		view.overlay.showLoadingOverlayChart(false)
-		exception.message ? view.alert(exception.message) : view.alert(exception);
-		throw exception
+		utils.handleUncaughtError(exception);
 	}
 }
 

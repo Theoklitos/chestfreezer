@@ -36,7 +36,7 @@
 	height: 100%;
 	background: #000;
 	opacity: 0.3;
-	position: fixed;
+	position: absolute;
 	left: 0;
 	top: 0;
 	z-index: 1;
@@ -49,8 +49,8 @@
 	left: 0;
 	right: 0;
 	margin: auto;
-	position: fixed;
+	position: absolute;
 	text-align: center;
 	padding: 0 10px;
-	z-index: 3;
+	z-index: 3;	
 }

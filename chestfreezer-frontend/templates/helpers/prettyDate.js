@@ -1,11 +1,15 @@
 define(['hbs/handlebars', 'utils'], function(Handlebars, utils) {	
 	
 	/*
-	 * returns the unix timestamp as a human readable pretty date (no time)
+	 * returns the unix timestamp as a human readable pretty date or datetime
 	 */
-	function prettyDate(timestamp, options) {
+	function prettyDate(onlyDate, timestamp, options) {
 		if(timestamp > 0) {
-			return utils.getUnixTimestampAsPrettyDate(timestamp);
+			if(onlyDate == 'date') {
+				return utils.getUnixTimestampAsPrettyDate(timestamp);
+			} else {
+				return utils.getUnixTimestampAsPrettyDateTime(timestamp);
+			}
 		} else {
 			return 'Undefined'
 		}

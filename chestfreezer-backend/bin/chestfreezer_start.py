@@ -102,6 +102,7 @@ def start_threads():
     temperature_probes.start_temperature_recording_thread()
     logic.start_instruction_thread()
     logic.start_temperature_control_thread()
+    logic.start_beer_monitoring_thread()
 
 def start_web_interface(server_type = "paste"):        
     """ starts the bottle.py server """            

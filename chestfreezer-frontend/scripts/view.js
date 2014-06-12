@@ -23,12 +23,12 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	  /*
 	   * displays an alert overlay
 	   */
-	  alert : function(message) {
-		  overlay.alert(message);
+	  alert : function(message, callback) {
+		  overlay.alert(message, callback);
 	  },
 	  
 	  /*
-	   * shows an overlay window with a prompt message, calls function with the user input
+	   * shows an popup window with a prompt message, then calls onSuccess function with the user input
 	   */
 	  showPrompt : function(message, onSuccess) {
 		  bootbox.prompt(message, function(result) {                
@@ -38,6 +38,30 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 			    onSuccess(result);                          
 			  }
 		  });
+	  },
+	  
+	  /*
+	   * shows an popup window with a prompt message and a big textarea
+	   */
+	  showTextAreaPrompt : function(message, textareaContent, onSuccess) {
+		  $('#comment-textarea').focus();
+		  bootbox.dialog({
+			  message: "<textarea style='width:100%; height: 300px;' rows='10' id='comment-teaxarea' class='bootbox-input bootbox-input-text form-control'>" + textareaContent + "</textarea>",
+			  title: message,
+			  buttons: {
+				  cancel: {
+					  label: "Cancel",
+					  className: "btn-default"
+				  },
+				  main: {
+					  label: "OK",
+					  className: "btn-primary",
+					  callback: function() {
+						  onSuccess($('#comment-teaxarea').val());
+					  }
+				  }
+			  }
+		  });		
 	  },
 
 	  /*
@@ -152,8 +176,8 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	  /*
 	   * calls the server to update both instructions & the target temperature 
 	   */
-	  updateInstructionsAndTargetTemperature : function() {
-		  this.showInstructions();
+	  updateInstructionsAndTargetTemperature : function(noOverlayFlag) {
+		  this.showInstructions(noOverlayFlag);
 		  this.updateTargetTemperature();
 	  },
 	  
@@ -179,7 +203,7 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	  /*
 	   * calls the server to update the instructions, active and non-active, and shows all the instructions 
 	   */
-	  showInstructions : function() {		  
+	  showInstructions : function(noOverlayFlag) {
 		  api.updateInstructions(function() {			  
 			  if($('#instruction-menu-button').hasClass('active')) {
 				  var template = instructions({instructions:model.instructions});		   
@@ -198,7 +222,7 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 			  }
 			  var template = Handlebars.compile('<span class="status-text instruction-text"><em>{{ instructionText }}</em></<span>');
 			  $('#active-instruction').html(template({instructionText:text}));
-		  });
+		  },noOverlayFlag);
 	  },
 	  
 	  /*
@@ -354,8 +378,8 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	   */
 	  showBeerTracker: function(onSuccess) {
 		  api.updateBeers(function() {
-			  if($('#beertracker-menu-button').hasClass('active')) {
-				  var template = beerTracker({beers:model.beers});				  		   
+			  if($('#beertracker-menu-button').hasClass('active')) {				  
+				  var template = beerTracker({beers:model.beers});		  		   
 				  $('#content').html(template);
 			  }
 			  if(onSuccess != undefined) {

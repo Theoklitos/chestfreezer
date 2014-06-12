@@ -95,7 +95,7 @@ class TestDatabaseAdapter(unittest.TestCase):
         assert len(self._get_all_temperatures()) == 0
         
     def test_store_retrieve_beer(self):
-        new_beer = Beer('Random Encounter', 'Hefeweizen', time.time() - 20000, time.time() - 10000, time.time() - 10000, time.time() - 5000, 7, 'Awesome hefe!');
+        new_beer = Beer('Random Encounter', 'Hefeweizen', time.time() - 20000, time.time() - 10000, time.time() - 4900, time.time(), 7, 'Awesome hefe!', dryhopping_from_timestamp = (time.time() - 10000), dryhopping_to_timestamp = (time.time() - 5000))
         assert len(db_adapter.get_all_beers()) == 0
         db_adapter.store_beer(new_beer)
         assert len(db_adapter.get_all_beers()) == 1
@@ -116,6 +116,7 @@ class TestDatabaseAdapter(unittest.TestCase):
         assert twice_retriever.rating == 10
         db_adapter.delete_beer_by_name('Random Encounter Mk2')
         assert len(db_adapter.get_all_beers()) == 0
+        print new_beer
         
     def tearDown(self):        
         db_adapter.drop_tables()

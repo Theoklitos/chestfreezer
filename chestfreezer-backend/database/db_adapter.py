@@ -95,7 +95,7 @@ def initialize_tables():
         sql_statement = "CREATE TABLE " + INSTRUCTIONS_TABLE_NAME + " (instruction_id INT AUTO_INCREMENT, instruction_target_temperature_C FLOAT(6,3), from_timestamp DATETIME, to_timestamp DATETIME, description TEXT, PRIMARY KEY(instruction_id))"        
         cursor.execute(sql_statement);
     if not does_table_exist(BEERS_TABLE_NAME):
-        sql_statement = "CREATE TABLE " + BEERS_TABLE_NAME + " (beer_id INT AUTO_INCREMENT, name VARCHAR(55) UNIQUE, style VARCHAR(55), fermenting_from DATE, fermenting_to DATE, conditioning_from DATE, conditioning_to DATE, rating INT(2), comments TEXT, PRIMARY KEY(beer_id))"        
+        sql_statement = "CREATE TABLE " + BEERS_TABLE_NAME + " (beer_id INT AUTO_INCREMENT, name VARCHAR(55) UNIQUE, style VARCHAR(55), fermenting_from DATE, fermenting_to DATE, dryhopping_from DATE, dryhopping_to DATE, conditioning_from DATE, conditioning_to DATE, rating INT(2), comments TEXT, PRIMARY KEY(beer_id))"        
         cursor.execute(sql_statement);
 
 def connect():    
@@ -250,20 +250,22 @@ def store_beer(beer):
     """ stores (or overwrites) a beer """    
     fermenting_from = str(misc_utils.get_storeable_date_timestamp(beer.fermenting_from_timestamp))
     fermenting_to = str(misc_utils.get_storeable_date_timestamp(beer.fermenting_to_timestamp))
+    dryhopping_from = str(misc_utils.get_storeable_date_timestamp(beer.dryhopping_from_timestamp))
+    dryhopping_to = str(misc_utils.get_storeable_date_timestamp(beer.dryhopping_to_timestamp))
     conditioning_from = str(misc_utils.get_storeable_date_timestamp(beer.conditioning_from_timestamp))
     conditioning_to = str(misc_utils.get_storeable_date_timestamp(beer.conditioning_to_timestamp))  
     # does the beer already exist?
     cursor.execute("SELECT * FROM " + BEERS_TABLE_NAME + " WHERE beer_id='" + str(beer.beer_id) + "'")    
     results = cursor.fetchall()    
     if len(results) != 0: # update    
-        update_sql = "UPDATE " + BEERS_TABLE_NAME + " SET name='" + beer.name + "',style='" + beer.style + "',fermenting_from='" + fermenting_from + "',fermenting_to='" + fermenting_to + "',conditioning_from='" + conditioning_from + "',conditioning_to='" + conditioning_to + "',rating='" + str(beer.rating) + "',comments='" + beer.comments + "' WHERE beer_id='" + str(beer.beer_id) + "'"   
+        update_sql = "UPDATE " + BEERS_TABLE_NAME + " SET name='" + beer.name + "',style='" + beer.style + "',fermenting_from='" + fermenting_from + "',fermenting_to='" + fermenting_to + "',dryhopping_from='" + dryhopping_from + "',dryhopping_to='" + dryhopping_to + "',conditioning_from='" + conditioning_from + "',conditioning_to='" + conditioning_to + "',rating='" + str(beer.rating) + "',comments='" + beer.comments + "' WHERE beer_id='" + str(beer.beer_id) + "'"   
         cursor.execute(update_sql)
         print 'Updated beer #' + str(beer.beer_id) + ' named "' + beer.name + '"'
     else: # create        
         if _is_memory_db():            
-            insert_sql = "INSERT INTO " + BEERS_TABLE_NAME + " (beer_id,name,style,fermenting_from,fermenting_to,conditioning_from,conditioning_to,rating,comments) VALUES (" + str(beer.beer_id) + ",'" + beer.name + "','" + beer.style + "','" + fermenting_from + "','" + fermenting_to + "','" + conditioning_from + "','" + conditioning_to + "'," + str(beer.rating) + ",'" + beer.comments + "')"       
+            insert_sql = "INSERT INTO " + BEERS_TABLE_NAME + " (beer_id,name,style,fermenting_from,fermenting_to,dryhopping_from,dryhopping_to,conditioning_from,conditioning_to,rating,comments) VALUES (" + str(beer.beer_id) + ",'" + beer.name + "','" + beer.style + "','" + fermenting_from + "','" + fermenting_to + "','" + dryhopping_from + "','" + dryhopping_to + "','" + conditioning_from + "','" + conditioning_to + "'," + str(beer.rating) + ",'" + beer.comments + "')"       
         else:
-            insert_sql = "INSERT INTO " + BEERS_TABLE_NAME + " (name,style,fermenting_from,fermenting_to,conditioning_from,conditioning_to,rating,comments) VALUES ('" + beer.name + "','" + beer.style + "','" + fermenting_from + "','" + fermenting_to + "','" + conditioning_from + "','" + conditioning_to + "'," + str(beer.rating) + ",'" + beer.comments + "')"         
+            insert_sql = "INSERT INTO " + BEERS_TABLE_NAME + " (name,style,fermenting_from,fermenting_to,dryhopping_from,dryhopping_to,conditioning_from,conditioning_to,rating,comments) VALUES ('" + beer.name + "','" + beer.style + "','" + fermenting_from + "','" + fermenting_to + "','" + dryhopping_from + "','" + dryhopping_to + "','" + conditioning_from + "','" + conditioning_to + "'," + str(beer.rating) + ",'" + beer.comments + "')"
         cursor.execute(insert_sql)
         print 'Created beer "' + beer.name + '"'
     db.commit()
@@ -274,12 +276,14 @@ def _cursor_row_to_beer(row):
     style = row[2]
     fermenation_from = _get_date(row[3])
     fermentation_to = _get_date(row[4])
-    conditioning_from = _get_date(row[5]);
-    conditioning_to = _get_date(row[6])    
-    rating = int(row[7])
-    comments = row[8]
+    dryhopping_from = _get_date(row[5])
+    dryhopping_to = _get_date(row[6])
+    conditioning_from = _get_date(row[7])
+    conditioning_to = _get_date(row[8])    
+    rating = int(row[9])
+    comments = row[10]
     beer_id = int(row[0])
-    beer = control.brew_logic.Beer(name, style, fermenation_from, fermentation_to, conditioning_from, conditioning_to, rating, comments, beer_id)    
+    beer = control.brew_logic.Beer(name, style, fermenation_from, fermentation_to, conditioning_from, conditioning_to, rating, comments, beer_id, dryhopping_from, dryhopping_to)    
     return beer
 
 def _get_beer_by_name_unsynchronized(beer_name):

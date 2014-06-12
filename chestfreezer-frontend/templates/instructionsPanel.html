@@ -18,8 +18,8 @@
 							<td class="id-cell">{{ instruction_id }}</td>
 							<td>{{ target_temperature_C }}</td>
 							<td>{{ description }}</td>
-							<td>{{ prettyDateTime from_timestamp }}</td>
-							<td>{{ prettyDateTime to_timestamp }}</td>
+							<td>{{ prettyDate "datetime" from_timestamp }}</td>
+							<td>{{ prettyDate "datetime" to_timestamp }}</td>
 						</tr>
 						{{/each}}
 					</tbody>

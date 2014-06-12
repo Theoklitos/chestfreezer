@@ -7,31 +7,32 @@ define([ 'jquery' , 'bootbox' ], function($, bootbox) {
 		/*
 		 * displays an alert box using bootbox
 		 */
-		alert : function(message) {
-			bootbox.alert(message);
+		alert : function(message, callback) {
+			bootbox.alert(message, callback);
 		},
 
 		/*
 		 * Overlays the chart with a loading icon
 		 */
 		showLoadingOverlayChart : function(shouldShow) {
-			this.showLoadingOverlay(shouldShow, $('#temperature-chart'), 'Reading temperatures...', 270, 200);
+			this.showLoadingOverlay(shouldShow, $('#temperature-chart'), 'Reading temperatures...', 270, 160);
 		},
 
 		/*
 		 * overlays the whole page with a loading icon, disabling everything
 		 */
 		showLoadingOverlayWholeScreen : function(shouldShow) {
-			this.showLoadingOverlay(shouldShow, $('#main-page'), 'Loading...', 130, 230);
+			overlayHeight = $('#main-page').height() / 2;
+			this.showLoadingOverlay(shouldShow, $('#main-page'), 'Loading...', 130, overlayHeight);
 		},
 
 		/*
 		 * Can be parameterized to display and overlay anywhere
 		 */
-		showLoadingOverlay : function(shouldShow, element, message, width, top) {
+		showLoadingOverlay : function(shouldShow, element, message, width, marginTop) {
 			if (shouldShow) {
 				var overlay = $('<div class="overlay"></div>');
-				var spinner = $('<div class="spinner" style="width: ' + width + 'px; top: ' + top + 'px">' + message
+				var spinner = $('<div class="spinner" style="width: ' + width + 'px; margin-top: ' + -marginTop + 'px">' + message
 						+ '</div>');
 				spinner.append($('<span class="glyphicon glyphicon-refresh"></span>'));
 				element.after(spinner);

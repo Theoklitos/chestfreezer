@@ -8,7 +8,7 @@ define([ 'jquery' ], function($) {
 		instructionUpdateIntervalSeconds : 60,
 		devicesUpdateIntervalSeconds : 15,
 		daysPastToShowInChart : 1,
-		showLoginForm : false,
+		showLoginForm : true,
 		username : 'test-username',
 		password : 'test-password',	
 		

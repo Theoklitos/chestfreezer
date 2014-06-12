@@ -1,4 +1,4 @@
-<div class="col-md-8 col-md-offset-2 content-row">
+<div class="col-md-10 col-md-offset-1 content-row">
 	<div class="row">		
 		<div class="table-responsive">
 			<table id="beer-table" class="table .table-hover table-condensed">
@@ -9,6 +9,8 @@
 						<th>Style</th>
 						<th>Fermentation Start</th>
 						<th>Fermentation End</th>
+						<th>Dry Hopping Start</th>
+						<th>Dry Hopping End</th>
 						<th>Conditioning Start</th>
 						<th>Conditioning End</th>
 						<th>Rating (0-10)</th>
@@ -21,12 +23,14 @@
 						<td class="id-cell">{{ beer_id }}</td>
 						<td contenteditable="true">{{ name }}</td>
 						<td contenteditable="true">{{ style }}</td>
-						<td class="beer-date-cell">{{ prettyDate fermenting_from }}</td>
-						<td class="beer-date-cell">{{ prettyDate fermenting_to }}</td>
-						<td class="beer-date-cell">{{ prettyDate conditioning_from }}</td>
-						<td class="beer-date-cell">{{ prettyDate conditioning_to }}</td>
+						<td class="beer-date-cell">{{ prettyDate "date" fermenting_from }}</td>
+						<td class="beer-date-cell">{{ prettyDate "date" fermenting_to }}</td>
+						<td class="beer-date-cell">{{ prettyDate "date" dryhopping_from }}</td>
+						<td class="beer-date-cell">{{ prettyDate "date" dryhopping_to }}</td>
+						<td class="beer-date-cell">{{ prettyDate "date" conditioning_from }}</td>
+						<td class="beer-date-cell">{{ prettyDate "date" conditioning_to }}</td>
 						<td class="ratings-cell" contenteditable="true">{{ rating }}</td>
-						<td class="comments-cell">{{ comments }}</td>								
+						<td class="comments-cell"><span class="pruned-comments">{{ pruneLongText comments }}</span><span class="full-comments" style="display:none">{{ comments }}</span></td>	 					
 					</tr>
 					{{/each}}
 				</tbody>

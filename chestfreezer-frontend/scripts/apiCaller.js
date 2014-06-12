@@ -7,8 +7,8 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'overlay' ], function($, u
 		/*
 		 * wrapper around jQuerys ajax, simply executes methods after a call to the backend has been made
 		 */
-		makeAjaxCallToBackend : function(method, url, async, onSuccess, onError, formData) {
-			if(!(url.indexOf("/temperature?start=") > -1)) {
+		makeAjaxCallToBackend : function(method, url, async, onSuccess, onError, formData, noOverlayFlag) {	
+			if(utils.shouldShowOverlayForUrl(url) && noOverlayFlag == undefined) {			
 				overlay.showLoadingOverlayWholeScreen(true);
 			}			
 			$.ajax({
@@ -27,10 +27,20 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'overlay' ], function($, u
 				error : function(xhr, status, error) {					
 					if (onError != undefined) {
 						onError(xhr, status, error)
-					} 
+					} else {
+						responseText = "";
+						if(xhr.responseText) {
+							responseText = "<br>Response text: " + xhr.responseText;
+						}
+						statusText = "<br>Status Code: " + xhr.status;
+						if(xhr.status == 0) {
+							statusText = "<br>Server seems to be unreachable!"
+						}
+						utils.handleUncaughtError("Error while communicating with the server, for URL:<br>" + url + statusText + responseText)						
+					}
 				},
-				complete: function() {	
-					if(!(url.indexOf("/temperature?start=") > -1)) {
+				complete: function() {
+					if(utils.shouldShowOverlayForUrl(url) && noOverlayFlag == undefined) {
 						overlay.showLoadingOverlayWholeScreen(false);
 					}
 				}
@@ -62,7 +72,7 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'overlay' ], function($, u
 		},
 		
 		/*
-		 * retrieves the settings from the server and applies them to this app
+		 * retrieves the settings from the server and applies them to this app's configuration
 		 */
 		getSettings : function(onSuccess, async) {
 			this.makeAjaxCallToBackend('GET', '/settings', async, function(response) {				
@@ -199,11 +209,11 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'overlay' ], function($, u
 		/*
 		 * stores json information in the model about the instructions
 		 */
-		updateInstructions : function(onSuccess) {			
+		updateInstructions : function(onSuccess, noOverlayFlag) {			
 			this.makeAjaxCallToBackend('GET', '/instruction', false, function(response) {				
 				model.instructions = response;
-			});
-			this.updateActiveInstruction(onSuccess);
+			}, undefined, undefined, noOverlayFlag);
+			this.updateActiveInstruction(onSuccess, noOverlayFlag);
 		},
 		
 		/*
@@ -223,13 +233,13 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'overlay' ], function($, u
 		/*
 		 * stores in the model whatever instruction is currently the "active" one, if any
 		 */
-		updateActiveInstruction : function(onSuccess) {
+		updateActiveInstruction : function(onSuccess, noOverlayFlag) {
 			this.makeAjaxCallToBackend('GET', '/instruction?now', true, function(response) {				
 				model.active_instruction = response;
 				if(onSuccess != undefined) {
 					onSuccess();
 				}
-			});
+			}, undefined, undefined, noOverlayFlag);
 		},
 		
 		/*
@@ -247,8 +257,7 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'overlay' ], function($, u
 		/*
 		 * PUTs data to update an instruction
 		 */
-		updateInstruction : function(formData, instruction_id, onSuccess) {
-			console.log('updating with: ' + formData)
+		updateInstruction : function(formData, instruction_id, onSuccess) {			
 			this.makeAjaxCallToBackend('PUT', '/instruction/' + instruction_id, true, function() {
 				overlay.alert('Instruction successfully updated.');
 				if(onSucccess != undefined) {

@@ -12,6 +12,8 @@ from control.brew_logic import Instruction, InstructionException, Beer,\
     BeerException
 import time
 from hardware import temperature_probes
+import datetime
+from util import emailer
 
 def overwriten_db_type():
     return 'memory'
@@ -123,14 +125,60 @@ class TestBrewLogic(unittest.TestCase):
     def test_correct_beer_initialization(self):
         fermenting_from = time.time() - 2000;
         fermenting_to = time.time() - 1000;
-        conditioning_from = time.time() - 1000;
-        conditioning_to = time.time() - 500;
-        beer = Beer('Random Encounter', 'Hefeweizen', fermenting_from, fermenting_to, conditioning_from, conditioning_to);
+        dryhopping_from = time.time() - 1000;
+        dryhopping_to = time.time() - 500;
+        conditioning_from = time.time() - 500;
+        conditioning_to = time.time() - 300;
+        beer = Beer('Random Encounter', 'Hefeweizen', fermenting_from, fermenting_to, conditioning_from, conditioning_to, dryhopping_from_timestamp = dryhopping_from, dryhopping_to_timestamp = dryhopping_to);
         assert beer.name == 'Random Encounter'
         assert beer.style == 'Hefeweizen'
         beer.rating = 5;
         assert beer.rating == 5;
         print beer
-
+        
+    def test_beer_status_emails(self):
+        # swap out the email sending methods
+        def print_email_to_be_sent(beer, is_for_tomorrow, name):
+            print 'Send email due to ' + name + ' for beer "' + beer.name + ', for tomorrow: ' + str(is_for_tomorrow) 
+        emailer.send_fermentation_email = lambda beer, is_for_tomorrow : print_email_to_be_sent(beer, is_for_tomorrow, 'Fermentation')        
+        emailer.send_dryhopping_email = lambda beer, is_for_tomorrow : print_email_to_be_sent(beer, is_for_tomorrow, 'Dryhopping')
+        emailer.send_conditioning_email = lambda beer, is_for_tomorrow : print_email_to_be_sent(beer, is_for_tomorrow, 'Conditioning')
+        # create the beer
+        fermenting_from = datetime.datetime(2014,2,6).strftime("%s")
+        fermenting_to = datetime.datetime(2014,2,10).strftime("%s")
+        dryhopping_from = datetime.datetime(2014,2,10).strftime("%s")
+        dryhopping_to = datetime.datetime(2014,2,14).strftime("%s")
+        conditioning_from = datetime.datetime(2014,2,14).strftime("%s")
+        conditioning_to = datetime.datetime(2014,2,22).strftime("%s")
+        beer = Beer('Random Encounter', 'Hefeweizen', fermenting_from, fermenting_to, conditioning_from, conditioning_to, 7, 'Test Beer', 0, dryhopping_from, dryhopping_to);        
+        db_adapter.store_beer(beer)
+        print db_adapter.get_beer_by_name('Random Encounter')        
+        
+        # so as to not wait
+        brew_logic._get_seconds_in_day = lambda : 1
+        brew_logic._get_seconds_in_hour = lambda : 1
+        
+        # we start at the specified date
+        brew_logic._get_current_datetime = lambda : datetime.datetime(2014,01,31);
+        brew_logic.start_beer_monitoring_thread()
+                
+        # nothing should happen, we move the time to one day before  the fermenting starts
+        time.sleep(1)
+        brew_logic._get_current_datetime = lambda : datetime.datetime(2014,2,5);
+        time.sleep(1)
+        brew_logic._get_current_datetime = lambda : datetime.datetime(2014,2,6);
+        time.sleep(1)
+        brew_logic._get_current_datetime = lambda : datetime.datetime(2014,2,9);
+        time.sleep(1)
+        brew_logic._get_current_datetime = lambda : datetime.datetime(2014,2,10);
+        time.sleep(1)
+        brew_logic._get_current_datetime = lambda : datetime.datetime(2014,2,14);
+        time.sleep(1)
+        brew_logic._get_current_datetime = lambda : datetime.datetime(2014,2,20);
+        brew_logic._get_current_datetime = lambda : datetime.datetime(2014,2,22);
+        
+        # VERIFICATION STILL NEEDS TO OCCUR! I just don't have time for it :p
+        brew_logic.should_threads_run = False  # @UndefinedVariable end!
+        
 if __name__ == '__main__':
     unittest.main()

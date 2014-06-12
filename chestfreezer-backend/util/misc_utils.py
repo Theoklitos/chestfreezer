@@ -11,6 +11,8 @@ import termios
 import fcntl
 import datetime
 
+SECONDS_IN_DAY = 86400
+
 def get_single_char():
     """ waits for user input and immediately reads the first char without waiting for a newline. 
     Found at: http://love-python.blogspot.de/2010/03/getch-in-python-get-single-character.html"""      
@@ -46,6 +48,10 @@ def get_storeable_date_timestamp(timestamp):
     """ from a unix timestsamp, returns a formatable date (no time!) that can be stored in SQL """
     return datetime.datetime.fromtimestamp(float(timestamp)).strftime('%Y-%m-%d')
 
+def get_pretty_date_timestamp(timestamp):
+    """ from a unix timestsamp, returns a nice human readable date """
+    return datetime.datetime.fromtimestamp(float(timestamp)).strftime('%d %b %Y')
+
 def is_within_distance(number, target_number, distance):
     """ returns true if the number is within 'distance' from the 'target_number' """
     actual_distance = abs(target_number - number)
@@ -71,3 +77,14 @@ def boolean_to_readable_string(boolean_value):
     if boolean_value:
         result = 'True'
     return result
+
+def get_start_and_end_of_day(now):
+    """ return the beginning and end, as unix timestamps, of the day that "now" is in """
+    if isinstance(now, basestring) | isinstance(now, int):
+        now = datetime.datetime.fromtimestamp(int(now))
+    start_of_day_timestamp = int(datetime.datetime(now.year,now.month,now.day).strftime("%s"))    
+    end_of_day_timestamp = start_of_day_timestamp + (SECONDS_IN_DAY - 1)
+    return start_of_day_timestamp, end_of_day_timestamp
+    
+    
+    

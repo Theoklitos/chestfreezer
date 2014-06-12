@@ -10,8 +10,6 @@ Simple json marshalling utils for the classes in this project
 from control import brew_logic
 from util import misc_utils, configuration
 from database import db_adapter
-from bottle import json_dumps
-
 
 def _pretty_state_identifier(state):
     """ returns 'off' for False and 'on' for True """
@@ -107,7 +105,7 @@ def get_settings_as_json():
     
 def get_beer_as_json(beer):
     """ returns the given beer as a json object """
-    return {'beer_id' : beer.beer_id, 'name' : beer.name, 'style' : beer.style, 'fermenting_from' : beer.fermenting_from_timestamp, 'fermenting_to' : beer.fermenting_to_timestamp, 'conditioning_from' : beer.conditioning_from_timestamp, 'conditioning_to' : beer.conditioning_to_timestamp, 'rating' : beer.rating, 'comments' : beer.comments}
+    return {'beer_id' : beer.beer_id, 'name' : beer.name, 'style' : beer.style, 'fermenting_from' : beer.fermenting_from_timestamp, 'fermenting_to' : beer.fermenting_to_timestamp, 'dryhopping_from' : beer.dryhopping_from_timestamp, 'dryhopping_to' : beer.dryhopping_to_timestamp, 'conditioning_from' : beer.conditioning_from_timestamp, 'conditioning_to' : beer.conditioning_to_timestamp, 'rating' : beer.rating, 'comments' : beer.comments}
     
 def get_all_beers_as_json():
     """ returns all the beers in the database as a json array """

@@ -8,6 +8,8 @@ Tests for the misc_utils
 
 import unittest
 from util import misc_utils
+import datetime
+import pytz
 
 class TestMiscUtils(unittest.TestCase):    
         
@@ -33,6 +35,13 @@ class TestMiscUtils(unittest.TestCase):
         c = misc_utils.fahrenheit_to_celsius(original_F)
         back_to_F = misc_utils.celsius_to_fahrenheit(c)
         assert(original_F == back_to_F)
-    
+        
+    def test_get_start_end_of_day(self):
+        a_datetime = datetime.datetime(2014,01,31,17,33,12).strftime("%s")        
+        results = misc_utils.get_start_and_end_of_day(a_datetime)
+        # hardcoded values that are known to be correct
+        assert results[0] == 1391122800
+        assert results[1] == 1391209199
+            
 if __name__ == '__main__':
     unittest.main()
