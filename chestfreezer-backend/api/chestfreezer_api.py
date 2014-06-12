@@ -64,8 +64,7 @@ def _do_auth_check():
     if enviroment_list.get('REMOTE_ADDR') is not None:
         ip = enviroment_list.get('REMOTE_ADDR')
     if enviroment_list.get('REMOTE_ADDR') is None:        
-        allowed_ip = configuration.is_ip_allowed(ip) | (ip == 'Unknown IP')
-    
+        allowed_ip = configuration.is_ip_allowed(ip) | (ip == 'Unknown IP')    
     if not configuration.is_security_enabled(): 
         authorized = True
     elif request.auth is not None:        
@@ -409,7 +408,7 @@ def set_device_state(device_name):
             print 'Overriding freezer to ' + str(state) + '...'
     elif _is_heater(device_name):
         if state is None:
-            brew_logic.remove_heater_override(override)
+            brew_logic.remove_heater_override()
             print 'Removing heater override...'
         else:
             brew_logic.set_heater_override(state)
@@ -525,7 +524,11 @@ def index():
 
 @bottle.get(WEB_INTERFACE_ROOT + '/')
 def index_backslash():
-    return index();
+    return index()
+
+@bottle.get('/')
+def index_redirect():
+    return index()
 
 @bottle.get('/<path:path>')
 def static_files(path):

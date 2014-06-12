@@ -33,7 +33,7 @@ def _get_beer_subject_body(name, from_timestamp, to_timestamp, is_for_tomorrow, 
     """ based on the date period and its type, generates an email subject + body """
     pretty_from = misc_utils.get_pretty_date_timestamp(from_timestamp)
     pretty_to = misc_utils.get_pretty_date_timestamp(to_timestamp)
-    body = 'The beer named "' + name + '" is scheduled to ' + verb + ' in the period from <strong>' + pretty_from + '</strong> until <strong>' + pretty_to + '</strong>'    
+    body = 'The beer named "' + name + '" is scheduled for <strong>' + noun + '</strong> during the period <strong>' + pretty_from + '</strong> to <strong>' + pretty_to + '</strong>'    
     if is_for_tomorrow:
         subject = name + ' is to begin ' + noun + ' tomorrow'
         body += ', which begins tomorrow. <br><br>You have one day to prepare!'

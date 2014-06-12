@@ -245,10 +245,12 @@ define([ 'jquery', 'utils', 'configuration', 'model', 'overlay' ], function($, u
 		/*
 		 * calls the backend to update the data of the given probe 
 		 */
-		updateProbe : function(probe) {
+		updateProbe : function(probe, onSuccess) {
 			formData = 'name=' + probe.name + '&master=' + probe.master;			
 			this.makeAjaxCallToBackend('PUT', '/probe/' + probe.probe_id, true, function() {
-				// do nothing on success, probes are updated in batches
+				if(onSuccess != undefined) {
+					onSuccess()
+				}
 			}, function(xhr, status, error) {
 				overlay.alert('Could not update probe: ' + xhr.responseText + ".");
 			}, formData);

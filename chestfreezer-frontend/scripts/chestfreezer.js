@@ -89,13 +89,15 @@ function startInstructionAndTargetTemperatureUpdateThread(api, view, model, conf
  * starts a timer that polls the server about the latest temp readings
  */
 function startTemperatureUpdateThread(api, view, model, utils, config, log) {	
-	var threadFunction = function(){		
+	var threadFunction = function(){
 		if(!config.stopThreads) {
 		    clearInterval(interval);	    
 		    startMillis = utils.getCurrentUnixTimestamp() - config.temperatureUpdateIntervalSeconds;
 			endMillis = utils.getCurrentUnixTimestamp();
-			fetchTemperatures(api, view, model, utils, startMillis, endMillis);
-			log.log('Updated temperature readings', true);		
+			if(!config.shouldStopTemperatureUpdates()) {
+				fetchTemperatures(api, view, model, utils, startMillis, endMillis);
+				log.log('Updated temperature readings', true);
+			}
 			interval = setInterval(threadFunction, config.getTemperatureUpdateIntervalSeconds());
 		}
 	}
@@ -120,21 +122,23 @@ function startDeviceUpdateThread(api, view, model, utils, config, log) {
 /*
  * sets the event for when the user toggles the device state in the dropdown
  */
-function setDeviceDropdownEvent(api, view, log, deviceName) {
-	var element = $('#' + deviceName + '-selector');
-	$(document).on('change', '#' + deviceName + '-selector', function() {
+function setDeviceDropdownEvent(api, view, utils, log, deviceName) {
+	var elementId = '#' + utils.capitaliseFirstLetter(deviceName) + '-selector'	
+	$(document).on('change', elementId, function() {
 		value = $(this).val();
 		if (value == 'AUTO') {
 			api.removeDeviceOverride(deviceName);
 			log.log("Removed " + deviceName + "'s override");
 		} else if (value == 'ON') {
-			api.setDeviceOverridenState(deviceName, true);
+			api.setDeviceOverridenState(deviceName, true);			
 			log.log('Manually turned ' + deviceName + ' on')
 		} else if (value == 'OFF') {
 			api.setDeviceOverridenState(deviceName, false);
 			log.log('Manually turned ' + deviceName + ' off')
 		}
-		view.updateDevices();
+		// a hack, because devices don't respond immediately
+		view.setDeviceTemplate(deviceName, value.toLowerCase(), value == 'AUTO')
+		setTimeout(view.updateDevices, 1000)
 	});
 }
 
@@ -165,8 +169,8 @@ function setStatusPanelEvents(api, view, utils, log) {
 		}
 	});
 	// also set the dropdown events
-	setDeviceDropdownEvent(api, view, log, 'freezer');
-	setDeviceDropdownEvent(api, view, log, 'heater');
+	setDeviceDropdownEvent(api, view, utils, log, 'freezer');
+	setDeviceDropdownEvent(api, view, utils, log, 'heater');
 }
 
 /*
@@ -229,6 +233,21 @@ function setInstructionEvents(api, view, model, utils, log) {
 }
 
 /*
+ * used as a closure by the update probe(s) functionality
+ */
+function updateProbeClosure(api, view, model, utils, config, log, isLastProbe) {	
+	api.updateProbe(probeFromTable, function() {
+		if(isLastProbe) {		
+			view.showProbes(function() {				
+				initializeChart(api, view, model, utils, config, log)
+				view.alert('Probe(s) updated succesfully');
+				log.log('Updated probes')				
+			});
+		}
+	});		
+}
+
+/*
  * sets the actions for the probe panel
  */
 function setProbeEvents(api, view, model, utils, config, log) {
@@ -248,20 +267,22 @@ function setProbeEvents(api, view, model, utils, config, log) {
 			view.alert('Error: At least one probe must be set to master!');
 			return;
 		}
+		var noChangedProbes = 0;
 		for(n in probeList) {
 			probeFromTable = probeList[n];
-			if(utils.hasChanged(probeFromTable)) {				
-				api.updateProbe(probeFromTable);
-				atLeastOneChange = true;
+			if(utils.hasChanged(probeFromTable)) {
+				noChangedProbes++;
+			}
+		}
+		var changedProbes = 0;
+		for(n in probeList) {	
+			probeFromTable = probeList[n];			
+			if(utils.hasChanged(probeFromTable)) {
+				changedProbes++;
+				isLastProbe = (changedProbes == (noChangedProbes-1))				
+				updateProbeClosure(api, view, model, utils, config, log, isLastProbe);				
 			} 
-		}
-		if(atLeastOneChange) { // refresh probe view if an update has occurred
-			view.showProbes(function() {
-				initializeChart(api, view, model, utils, config, log)
-				view.alert('Probe(s) updated succesfully');
-				log.log('Updated probes')
-			});			
-		}
+		}		
 	});
 }
 
@@ -469,6 +490,7 @@ function setEvents(api, view, model, utils, config, log) {
 function initializeChart(api, view, model, utils, config, log, callback) {
 	// read probe info and initialize the chart data structure
 	// the chart data structure needs to be very specific, see http://canvasjs.com/
+	config.stopTemperatureUpdates = true;
 	api.updateProbeInfo(function() {
 		model.chartData = [];
 		for (var n in model.probes) {
@@ -491,9 +513,10 @@ function initializeChart(api, view, model, utils, config, log, callback) {
 		startDate = config.daysPastToShowInChart * (24 * 60 * 60) // seconds in the given days
 		fetchTemperatures(api, view, model, utils, now-startDate, now, function() {
 			if(callback != undefined) {
-				callback();
+				callback();				
 			}
-		});		
+			config.stopTemperatureUpdates = false;			
+		});
 	});
 }
 /*

@@ -257,7 +257,7 @@ def _is_time_in_tomorrow(time_to_check):
     return (time_to_check >= tomorrow_timestamps[0]) & (time_to_check < tomorrow_timestamps[1])
 
 def _do_beer_state_email_checks(beer, timestamp, email_function):
-    """ checks the given timestamp if its within today or tomorrow, and calls the email function if so """
+    """ checks the given timestamp if its within today or tomorrow, and calls the email function if so """    
     if _is_time_in_today(timestamp):
         email_function(beer, False);
     elif _is_time_in_tomorrow(timestamp):
@@ -268,9 +268,9 @@ def start_beer_monitoring_thread():
     def monitor_beers():
         global should_threads_run
         while should_threads_run:
-            if (_get_current_hour() == '0') | (_get_current_hour() == 0): # we check the beginning of every day
+            if (_get_current_hour() == '0') | (_get_current_hour() == 1): # we check the beginning of every day
                 print 'Its time to check whether beer emails are to be sent out!'
-                for beer in database.db_adapter.get_all_beers():                   
+                for beer in database.db_adapter.get_all_beers():
                     # fermentation
                     _do_beer_state_email_checks(beer,beer.fermenting_from_timestamp, emailer.send_fermentation_email)
                     # dry-hopping

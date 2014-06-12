@@ -21,8 +21,10 @@ define([ 'jquery' , 'bootbox' ], function($, bootbox) {
 		/*
 		 * overlays the whole page with a loading icon, disabling everything
 		 */
-		showLoadingOverlayWholeScreen : function(shouldShow) {
-			overlayHeight = $('#main-page').height() / 2;
+		showLoadingOverlayWholeScreen : function(shouldShow, overlayHeight) {
+			if(overlayHeight == undefined) {
+				overlayHeight = ($('#main-page').height() / 2) - 60;
+			}
 			this.showLoadingOverlay(shouldShow, $('#main-page'), 'Loading...', 130, overlayHeight);
 		},
 

@@ -119,7 +119,7 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 				        for (var i = 0; i < e.entries.length; i++){
 				        	var probeName = e.entries[i].dataSeries.name;
 				        	var hexColor = e.entries[i].dataSeries.color;
-				        	str = str.concat('<br><span style="color:' + hexColor + '">' + probeName + '</span>: ' + e.entries[i].dataPoint.y + unit);
+				        	str = str.concat('<br><span style="color:' + hexColor + '">' + probeName + '</span>: ' + e.entries[i].dataPoint.y.toFixed(1) + unit);
 				        };
 				        return (str);
 				 	},
@@ -156,14 +156,28 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	  },
 	  
 	  /*
+	   * directly passes the given options to the device template 
+	   */
+	  setDeviceTemplate : function(deviceName, deviceState, deviceOverriden) {		  
+		  html = device({
+			  status: {
+				  state : deviceState,
+				  overridden : deviceOverriden
+			  },
+			  deviceName: utils.capitaliseFirstLetter(deviceName)
+		  });
+		  $('#' + deviceName + '-status').html(html);
+	  },
+	  
+	  /*
 	   * Polls the server for the state of the heater + freezer and then updates the view (texts, dropdowns etc) using the template
 	   */
 	  updateDevices : function() {
-		  api.updateDevices(function() {		  
+		  api.updateDevices(function() {  
 			  freezerHtml = device({
 				  status: model.devices['freezer'],
 				  deviceName: 'Freezer'
-			  });
+			  });			  
 			  $('#freezer-status').html(freezerHtml);
 			  heaterHtml = device({
 				  status: model.devices['heater'],
@@ -397,7 +411,7 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 				  });
 				  $(this).on("dp.change",function (e) {
 					  var date = new Date(e.date._d);
-					  var monthText = date.getMonth();
+					  var monthText = (date.getMonth()+1);
 					  if(monthText < 10) {
 						  monthText = '0' + monthText;
 					  }					  

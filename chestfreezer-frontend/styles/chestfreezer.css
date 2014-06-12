@@ -78,7 +78,7 @@
 	position: relative;
 }
 
-#heater-selector, #freezer-selector {
+#Heater-selector, #Freezer-selector {
 	position: absolute;
 	top: -22px;
 	padding: 3px;
