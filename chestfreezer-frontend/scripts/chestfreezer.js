@@ -1,6 +1,5 @@
 requirejs.config({
 	paths : {
-		// 'jquery' : 'lib/jquery-2.1.1.min',
 		'jquery' : 'http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min',
 		'bootstrap' : '//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min',
 		'bootbox' : 'lib/bootbox.min',
@@ -19,15 +18,12 @@ requirejs.config({
 		},
 		'bootstrap' : {
 			deps : [ 'jquery', 'moment', 'bootstrap-datetimepicker' ]
-		},
-		'chartjs' : {
-			deps : [ 'jquery' ]
-		},
+		},		
 		'Base64' : {
 			exports : 'Base64'
 		},
 		'chartjs' : {
-			deps : [ 'globalize' ]
+			deps : [ 'globalize', 'jquery' ]
 		}
 	},
 	hbs : {
@@ -537,13 +533,13 @@ function main(utils, api, model, config, view, log) {
 /*
  * wrapper with log-in functionality around the main function
  */
-require([ 'domReady', 'utils', 'apiCaller', 'model', 'configuration', 'view', 'log' ], function(domReady, utils,
+require([ 'domReady', 'utils', 'apiCaller', 'model', 'configuration', 'view', 'log', 'bootstrap' ], function(domReady, utils,
 		api, model, config, view, log) {
 	domReady(function() {
 		log.log('Main function start');		
 		if (config.showLoginForm) {
 			view.showLoginForm(true);
-			$('#login-button').click(function() {
+			$('#login-button').click(function() {				
 				api.doAfterSignin($('#username').val(), $('#password').val(), function() {
 					view.alert('Welcome to the Chestfreezer, ' + config.username + '.');
 					view.showLoginForm(false);
