@@ -79,6 +79,9 @@ def initialize_probes():
     for probe_id in probe_ids:
         probe = Probe(probe_id)
         database.db_adapter.store_probe(probe, False)
+    # now check if any probe exists at all
+    if len(database.db_adapter.get_all_probes()) == 0:
+        raise Exception('No temperature sensors were found at ' + TEMPERATURE_PROBE_PATH + '.\nYou need to connect at least one probe for the chestfreezer to work.')
 
 def get_temperature_readings():
     """ reads (immediately) the temperature readings from the probes returns a list with any temperature read """
@@ -96,6 +99,7 @@ def get_temperature_readings():
                 temperature_C = float(temp_string) / 1000.0            
                 reading = TemperatureReading(probe_id, temperature_C)
                 readings.append(reading)
+                global master_probe_id
                 if probe_id == master_probe_id:
                     global _last_master_reading
                     _last_master_reading = reading.temperature_C
@@ -109,21 +113,26 @@ def get_temperature_readings():
     return readings        
 
 def determine_master_probe():
-    """ if there is no temperature probe set as the MASTER one, will set the first one """    
+    """ if there is no temperature probe set as the MASTER one, will set the first one """        
     first_result = None
     is_anyone_master = False
     for probe in database.db_adapter.get_all_probes():
         if first_result is None:
-            first_result = probe
-        if probe.master == 1:
+            first_result = probe        
+        if probe.master:
             is_anyone_master = True
+            global master_probe_id
+            master_probe_id = probe.probe_id
+            print 'Probe "' + probe.name + '" was set to be the master one.'
             break    
     if not is_anyone_master:
         first_result.master = True 
         database.db_adapter.store_probe(first_result)
         global master_probe_id
         master_probe_id = first_result.probe_id
-        print 'Auto-determined probe #' + str(first_result.probe_id) + ' to be the master one.' 
+        print 'Auto-determined probe #' + str(first_result.probe_id) + ' to be the master one.'
+    if not is_anyone_master:
+        raise Exception('No probe was set as master!') 
 
 def set_probe_as_not_master(probe_id):
     """ removes the master status from the given probe, if any """

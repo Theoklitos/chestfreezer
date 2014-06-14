@@ -114,8 +114,8 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 				toolTip : {
 					shared : true,					
 				 	content: function(e) {
-				 		var str = '' + new Date(e.entries[0].dataPoint.x)
-				 		str = '<strong>' + str.substring(0, str.length-15) + '</strong>'
+				 		var str = '<strong>' + new Date(e.entries[0].dataPoint.x) + '</strong>'
+				 		//str = '<strong>' + str.substring(0, str.length-15) + '</strong>'				 		
 				        for (var i = 0; i < e.entries.length; i++){
 				        	var probeName = e.entries[i].dataSeries.name;
 				        	var hexColor = e.entries[i].dataSeries.color;
@@ -317,7 +317,7 @@ define(['jquery', 'log', 'model', 'overlay', 'apiCaller', 'configuration', 'util
 	   */
 	  showProbes: function(onSuccess) {
 		  api.updateProbeInfo(function() {
-			  if($('#probe-menu-button').hasClass('active')) {
+			  if($('#probe-menu-button').hasClass('active')) {				  
 				  var template = probes({probes:model.probes});		   
 				  $('#content').html(template);
 			  }

@@ -187,7 +187,10 @@ def chestfreezer_call_decorator(fn):
 def get_temperatures():              
     start_timestamp, end_timestamp = _get_timestamp_query_parameters()
     try:        
-        print 'Asked for temperature readings from ' + misc_utils.timestamp_to_datetime(float(start_timestamp)).strftime("%c") + ' to ' + misc_utils.timestamp_to_datetime(float(end_timestamp)).strftime("%c") + '...',
+        start_timestamp = float(start_timestamp)
+        end_timestamp = float(end_timestamp)
+        seconds = end_timestamp - start_timestamp
+        print 'Asked for temperature readings from ' + misc_utils.timestamp_to_datetime(start_timestamp).strftime("%c") + ' to ' + misc_utils.timestamp_to_datetime(end_timestamp).strftime("%c") + ' (' + str(int(seconds)) + ' seconds past)...',
         all_readings = db_adapter.get_temperature_readings(int(start_timestamp), int(end_timestamp))
         print 'got ' + str(len(all_readings)) + ' result(s).'
         response.content_type = 'application/json;'                

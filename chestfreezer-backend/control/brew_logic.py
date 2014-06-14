@@ -24,6 +24,8 @@ current_instruction_id = None
 
 should_threads_run = True
 
+SECONDS_IN_ONE_YEAR = 31557600 
+
 class Instruction():
     """ an instruction that dictates what the temperature(C) should be, and in which time period it should be so """
     def __init__(self, instruction_id, instruction_target_temperature_C, from_timestamp, to_timestamp, description='No description given'):
@@ -79,11 +81,11 @@ class Beer():
         """ makes sure that fermenting is before conditioning, and those intervals don't overlap. Also makes sure that rating is [0,10]. Throws BeerException """
         if (self.fermenting_from_timestamp > self.fermenting_to_timestamp) | (self.conditioning_from_timestamp > self.conditioning_to_timestamp) | (self.dryhopping_from_timestamp > self.dryhopping_to_timestamp):            
             raise BeerException('A "start" date is after its matching "end" date')
-        if (self.fermenting_to_timestamp > self.conditioning_from_timestamp) & (self.conditioning_from_timestamp != -1) & (self.conditioning_from_timestamp != -3600):
+        if (self.fermenting_to_timestamp > self.conditioning_from_timestamp) & (self.conditioning_from_timestamp > SECONDS_IN_ONE_YEAR):
             raise BeerException('Fermentation date is after the conditioning date')        
-        if (self.fermenting_to_timestamp > self.dryhopping_from_timestamp) & (self.dryhopping_from_timestamp != -1) & (self.dryhopping_from_timestamp != -3600):
+        if (self.fermenting_to_timestamp > self.dryhopping_from_timestamp) & (self.dryhopping_from_timestamp > SECONDS_IN_ONE_YEAR):
             raise BeerException('Fermentation date is after the dry-hopping date')        
-        if (self.dryhopping_to_timestamp > self.conditioning_from_timestamp) & (self.conditioning_from_timestamp != -1) & (self.conditioning_from_timestamp != -3600):
+        if (self.dryhopping_to_timestamp > self.conditioning_from_timestamp) & (self.conditioning_from_timestamp > SECONDS_IN_ONE_YEAR):
             raise BeerException('Dry-hopping date is after the conditioning date')
         if hasattr(self, 'rating'):
             if (self.rating < 0) | (self.rating > 10):
@@ -268,7 +270,7 @@ def start_beer_monitoring_thread():
     def monitor_beers():
         global should_threads_run
         while should_threads_run:
-            if (_get_current_hour() == '0') | (_get_current_hour() == 1): # we check the beginning of every day
+            if (_get_current_hour() == '0') | (_get_current_hour() == 0): # we check the beginning of every day
                 print 'Its time to check whether beer emails are to be sent out!'
                 for beer in database.db_adapter.get_all_beers():
                     # fermentation

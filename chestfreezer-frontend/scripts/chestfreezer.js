@@ -1,11 +1,15 @@
 requirejs.config({
 	paths : {
-		'jquery' : 'http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min',
-		'bootstrap' : '//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min',
+		//'jquery' : 'http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min',
+		'jquery' : 'lib/jquery.min',
+		//'bootstrap' : '//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min',
+		'bootstrap' : 'lib/bootstrap.min',
 		'bootbox' : 'lib/bootbox.min',
-		'globalize' : 'http://ajax.aspnetcdn.com/ajax/globalize/0.1.1/globalize.min',
+		//'globalize' : 'http://ajax.aspnetcdn.com/ajax/globalize/0.1.1/globalize.min',
+		'globalize' : 'lib/globalize.min',
 		'domReady' : 'lib/domReady',
-		'chartjs' : 'http://cdn3.devexpress.com/jslib/13.2.9/js/dx.chartjs',
+		//'chartjs' : 'http://cdn3.devexpress.com/jslib/13.2.9/js/dx.chartjs',
+		'chartjs' : 'lib/dx.chartjs',
 		'canvasjs' : 'lib/canvasjs.min',
 		'moment' : 'lib/moment.min',
 		'bootstrap-datetimepicker' : 'lib/bootstrap-datetimepicker.min',
@@ -82,7 +86,7 @@ function startInstructionAndTargetTemperatureUpdateThread(api, view, model, conf
 	    	interval = setInterval(threadFunction, config.getInstructionsUpdateIntervalSeconds());
 		}
 	}
-	var interval = setInterval(threadFunction(), config.getInstructionsUpdateIntervalSeconds());	
+	var interval = setInterval(threadFunction, config.getInstructionsUpdateIntervalSeconds());	
 }
 
 /*
@@ -90,7 +94,7 @@ function startInstructionAndTargetTemperatureUpdateThread(api, view, model, conf
  */
 function startTemperatureUpdateThread(api, view, model, utils, config, log) {	
 	var threadFunction = function(){
-		if(!config.stopThreads) {
+		if(!config.stopThreads) {			
 		    clearInterval(interval);	    
 		    startMillis = utils.getCurrentUnixTimestamp() - config.temperatureUpdateIntervalSeconds;
 			endMillis = utils.getCurrentUnixTimestamp();
@@ -101,7 +105,7 @@ function startTemperatureUpdateThread(api, view, model, utils, config, log) {
 			interval = setInterval(threadFunction, config.getTemperatureUpdateIntervalSeconds());
 		}
 	}
-	var interval = setInterval(threadFunction(), config.getTemperatureUpdateIntervalSeconds());
+	var interval = setInterval(threadFunction, config.getTemperatureUpdateIntervalSeconds());
 }
 
 /*
@@ -116,7 +120,7 @@ function startDeviceUpdateThread(api, view, model, utils, config, log) {
 		    interval = setInterval(threadFunction, config.getDeviceUpdateIntervalSeconds());
 		}
 	}
-	var interval = setInterval(threadFunction(), config.getDeviceUpdateIntervalSeconds());	
+	var interval = setInterval(threadFunction, config.getDeviceUpdateIntervalSeconds());	
 }
 
 /*
@@ -260,30 +264,18 @@ function setProbeEvents(api, view, model, utils, config, log) {
 	    $('input.master-checkbox').removeAttr('checked');	    
 	    $(event.target).prop('checked', true);
 	});
-	$(document).on('click', '#update-probe-button', function() {
-		var atLeastOneChange = false;
+	$(document).on('click', '#update-probe-button', function() {		
 		probeList = view.getProbesFromTable();
 		if(!utils.isAnyProbeMaster(probeList)) {
 			view.alert('Error: At least one probe must be set to master!');
 			return;
-		}
-		var noChangedProbes = 0;
+		}		
 		for(n in probeList) {
 			probeFromTable = probeList[n];
-			if(utils.hasChanged(probeFromTable)) {
-				noChangedProbes++;
-			}
+			isLastProbe = (n == (probeList.length-1))				
+			updateProbeClosure(api, view, model, utils, config, log, isLastProbe);				
 		}
-		var changedProbes = 0;
-		for(n in probeList) {	
-			probeFromTable = probeList[n];			
-			if(utils.hasChanged(probeFromTable)) {
-				changedProbes++;
-				isLastProbe = (changedProbes == (noChangedProbes-1))				
-				updateProbeClosure(api, view, model, utils, config, log, isLastProbe);				
-			} 
-		}		
-	});
+	});	
 }
 
 /*

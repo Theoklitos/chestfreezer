@@ -8,6 +8,7 @@ Top level module that is responsible for initializing everything
 # begin with some package checks
 import sys
 import os
+from control import brew_logic
 sys.path.append(os.path.abspath('..'))
 from util import configuration, misc_utils
 
@@ -121,8 +122,12 @@ if __name__ == "__main__":
             pass
     except KeyboardInterrupt:
         print '\nInterrupted, shutting down...'
-        # stop threads, cleanup, etc? TODO
-        chestfreezer_gpio.cleanup()
+        # stop threads, cleanup, etc?         
+        brew_logic._set_heater(False)
+        print 'Heater is turned off...'
+        brew_logic._set_freezer(False)
+        print 'Freezer is turned off...'
+        chestfreezer_gpio.cleanup()        
         print 'Goodbye!'
         os._exit(0)
     except Exception as e:
