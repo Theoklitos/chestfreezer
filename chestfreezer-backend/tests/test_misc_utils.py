@@ -9,7 +9,6 @@ Tests for the misc_utils
 import unittest
 from util import misc_utils
 import datetime
-import pytz
 
 class TestMiscUtils(unittest.TestCase):    
         

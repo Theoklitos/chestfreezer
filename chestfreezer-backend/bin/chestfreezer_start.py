@@ -8,9 +8,9 @@ Top level module that is responsible for initializing everything
 # begin with some package checks
 import sys
 import os
-from control import brew_logic
 sys.path.append(os.path.abspath('..'))
 from util import configuration, misc_utils
+from control import brew_logic
 
 __import__('hardware.chestfreezer_gpio')
 try:
