@@ -63,12 +63,16 @@ else:
 
 def _get_array_option_with_default(option_name, default_value):
     """ returns a list (trimmed) from a comma-separated value """
+    return _get_array_option_with_default_from_parser(option_name, default_value, Config)
+
+def _get_array_option_with_default_from_parser(option_name, default_value, config_parser):
+    """ like above but the parser can be specified too """
     pattern = re.compile('\s*,\s*')    
-    result = pattern.split(_get_option_with_default(option_name, default_value))
+    result = pattern.split(_get_option_with_default_from_parser(option_name, default_value, config_parser))
     if (len(result) == 1) & (not result[0].strip()):
         return []     
     else:
-        return result
+        return result    
 
 def _get_boolean_option(option_name, default_value):
     """ parses and returns a config value of true/false to a boolean object """    
@@ -81,15 +85,19 @@ def _get_boolean_option(option_name, default_value):
 
 def _get_option_with_default(option_name, default_value):
     """ if the option exists, returns its value. If it is empty or does not exist, returns the default value"""
+    return _get_option_with_default_from_parser(option_name, default_value, Config)
+
+def _get_option_with_default_from_parser(option_name, default_value, config_parser):
+    """ like the previous function but one can specify the parser to be used """
     try:        
-        option_value = Config.getoption(option_name)        
+        option_value = config_parser.getoption(option_name)
         if not option_value:
             raise NoOptionError
         else:
             return option_value
     except NoOptionError:
-        return default_value    
-
+        return default_value
+    
 def set_temperature_tolerance_C(temperature_C):
     """ sets the allowed tolerance/margin that the temp can deviate from the target temp """
     global temperature_tolerance_C_overwrite
@@ -184,7 +192,8 @@ def port():
 
 def emails_to_warn():
     """ who should get warning about errors messages in the chestfreezer? """
-    return _get_array_option_with_default('emails_to_warn', DEFAULT_EMAILS_TO_WARN) 
+    emails_for_escalation = _get_array_option_with_default('emails_to_warn', DEFAULT_EMAILS_TO_WARN)        
+    return emails_for_escalation 
 
 def emails_to_notify():
     """ who should get notifications from the chestfreezer? """
@@ -211,10 +220,21 @@ def is_security_enabled():
     else:
         return _is_security_enabled
 
+def re_read_allowed_ips():
+    """ reads the IPs from the file directly without using the ConfigParser """
+    global config_file        
+    try:
+        temporary_parser = SimpleConfigParser.SimpleConfigParser()
+        temporary_parser.read(config_file)
+        return _get_array_option_with_default_from_parser('allowed_ips', '', temporary_parser)    
+    except Exception as config_exception:
+        return _get_array_option_with_default('allowed_ips', '')        
+    
 def is_ip_allowed(ip):
     """ returns true if the given IP is allowed to access the api """
     ip = ip.strip()
-    allowed_ips = _get_array_option_with_default('allowed_ips', '')
+    allowed_ips = re_read_allowed_ips();
+    print allowed_ips
     if ('192.168.0' in ip) | ('192.168.1' in ip) | (ip == '127.0.0.1'):
         return True;
     else:

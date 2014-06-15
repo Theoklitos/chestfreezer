@@ -78,8 +78,14 @@ def _do_auth_check():
         # disabled due to spam! need  to find a smarter way for this
         #_log_and_print_security_message(pretty_now_datetime + ': Address [' + ip + '] accessed the API')
         return  # all good
-    else:
+    else:       
         message = pretty_now_datetime + ': Unauthorized access from [' + ip + ']'         
+        if (user is not None) | (password is not None):
+            message = message + ' with credentials ' + user + ':' + password
+        if not allowed_ip:
+            message = message + '. Reason: User was blocked due to IP restriction.'
+        elif not authorized:
+            message = message + '. Reason: Credentials were wrong.'
         _log_and_print_security_message(message)
         if (not authorized) | (not allowed_ip): emailer.escalate("Unauthorized access", message)
         abort(401, "This method requires basic authentication")
