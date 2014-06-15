@@ -234,7 +234,6 @@ def is_ip_allowed(ip):
     """ returns true if the given IP is allowed to access the api """
     ip = ip.strip()
     allowed_ips = re_read_allowed_ips();
-    print allowed_ips
     if ('192.168.0' in ip) | ('192.168.1' in ip) | (ip == '127.0.0.1'):
         return True;
     else:
