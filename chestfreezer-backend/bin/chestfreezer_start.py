@@ -34,7 +34,7 @@ import api.chestfreezer_api as api
 
 def do_sound_check():
     """ asks the user if he heard 4 clicks, returns the boolean result"""
-    print 'Did you hear the four distinct noises (enter \'y\' or \'n\' or any other key to repeat)?'
+    print 'Did you hear the devices switching? (enter \'y\' or \'n\' or any other key to repeat)?'
     response = misc_utils.get_single_char().lower()
     if response == 'y':
         return True
