@@ -189,7 +189,6 @@ def _set_freezer(should_activate):
 
 def _set_device_internal(device_descriptive_string, should_activate, global_state_variable, pin_number):
     print 'Received command to set ' + device_descriptive_string + ' to ' + str(should_activate)
-    global global_state_variable
     if should_activate is not global_state_variable:
         new_global_state = should_activate
         if _should_reverse_device_state():             
