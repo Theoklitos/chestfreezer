@@ -48,7 +48,7 @@ def check_hardware(skip_keyboard_input = False):
     # first the GPIO pins        
     sound_check_passed = 'skip-gpio-test' in sys.argv;
     while not sound_check_passed:
-        print 'Checking device control - you should hear four clicking noises...'
+        print 'Checking device control - you should hear both devices turn on/off or off/on...'
         time.sleep(1)
         try:
             chestfreezer_gpio.output_pin_for_time(configuration.heater_pin(), False, 1)            
@@ -79,7 +79,7 @@ def check_hardware(skip_keyboard_input = False):
 def check_internet_connectivity():    
     print 'Checking internet connectivity...',
     try:
-        urllib2.urlopen('http://74.125.228.100', timeout=5)  # ping google
+        urllib2.urlopen('http://www.google.com', timeout=10)  # ping google
         do_we_have_internet = True
     except urllib2.URLError:
         do_we_have_internet = False        
@@ -123,10 +123,11 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print '\nInterrupted, shutting down...'
         # stop threads, cleanup, etc?         
-        brew_logic._set_heater(False)
-        print 'Heater is turned off...'
-        brew_logic._set_freezer(False)
-        print 'Freezer is turned off...'
+        normal_boolean_state = configuration.normal_relay_state() == 'open'
+        brew_logic._set_heater(normal_boolean_state)
+        print 'Heater returned to default state...'
+        brew_logic._set_freezer(normal_boolean_state)
+        print 'Freezer returned to default state...'
         chestfreezer_gpio.cleanup()        
         print 'Goodbye!'
         os._exit(0)

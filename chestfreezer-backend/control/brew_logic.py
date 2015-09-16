@@ -15,9 +15,19 @@ instruction_target_temperature_C = None
 temperature_override_C = None
 
 freezer_override = False
-freezer_state = False
 heater_override = False
-heater_state = False
+
+def _should_reverse_device_state():
+    ''' checks the config, if the normal relay state is OPEN then all the device states should be reversed '''
+    value = configuration.normal_relay_state()
+    if value == 'open': return True
+    elif value == 'false': return False
+    else: raise Exception('Relay normal state is neither "open" nor "closed", instead is "' + str(value) + '". Pin will not trigger.')
+
+freezer_state = _should_reverse_device_state()
+print 'Initial freezer state is: ' + str(freezer_state)
+heater_state = _should_reverse_device_state()
+print 'Initial heater state is: ' + str(heater_state)
 
 instruction_thread_in_waiting = True
 current_instruction_id = None
@@ -154,12 +164,13 @@ def store_instruction_for_unique_time(instruction):
     elif (not ((len(results) == 1) & (results[0].instruction_id == instruction.instruction_id))) | (len(results) > 1):
         raise InstructionException('Instruction overlaps with one or more existing instructions')
     else: database.db_adapter._store_instruction(instruction)    
-
+    
 def _set_heater(should_activate):
-    """ sets the heater state to on/off directly """
+    """ sets the heater state to on/off directly """        
     global heater_state
-    if should_activate is not heater_state:        
+    if should_activate is not heater_state:
         heater_state = should_activate
+        if _should_reverse_device_state(): should_activate = not should_activate
         chestfreezer_gpio.output_pin(configuration.heater_pin(), not should_activate) 
 
 def _set_freezer(should_activate):
@@ -167,6 +178,7 @@ def _set_freezer(should_activate):
     global freezer_state
     if should_activate is not freezer_state:        
         freezer_state = should_activate
+        if _should_reverse_device_state(): should_activate = not should_activate 
         chestfreezer_gpio.output_pin(configuration.freezer_pin(), not should_activate) 
 
 def _is_device_overriden():
@@ -211,8 +223,8 @@ def start_temperature_control_thread():
             try:
                 actual_target_C = get_actual_target_temperature_C()                
                 current_temperature_C = hardware.temperature_probes.get_current_temperature()
-                if _is_device_overriden() | (current_temperature_C is None) | (actual_target_C is None): raise StopControlThread  # do nothing
-                # the great and efficient (not) algorithm!
+                if _is_device_overriden() | (current_temperature_C is None) | (actual_target_C is None): raise StopControlThread  # skip iteration
+                # the great and (not so) efficient algorithm!
                 if misc_utils.is_within_distance(current_temperature_C, actual_target_C, configuration.temperature_tolerance()):                     
                     _set_heater(False); _set_freezer(False)                
                 elif current_temperature_C < actual_target_C:

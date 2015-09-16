@@ -5,6 +5,7 @@ Tests for the the configuration
 
 @author: theoklitos
 '''
+
 import unittest
 from util import configuration
 from mock import Mock
@@ -24,6 +25,10 @@ class TestConfiguration(unittest.TestCase):
         assert(configuration.is_ip_allowed('666.666.666.666'))
         assert(configuration.is_ip_allowed('999.999.999.999'))
         
+    def test_default_relay_state_is_open(self):
+        print configuration.normal_relay_state()
+        assert(configuration.normal_relay_state() == 'open')
+            
     def test_is_security_enabled(self):
         oldMethod = configuration._get_option_with_default;
         configuration._get_option_with_default = Mock()

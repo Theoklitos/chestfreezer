@@ -19,6 +19,7 @@ DEFAULT_DB_HOST = 'localhost'
 DEFAULT_DB_USER = 'test-user'
 DEFAULT_DB_PASSWORD = 'test-password'
 DEFAULT_DB_NAME = 'chestfreezer'
+DEFAULT_NORMAL_RELAY_STATE = 'open'
 DEFAULT_STORE_TEMPERATURE_INTERVAL_SECONDS = 5
 store_interval_overwrite = None
 DEFAULT_INSTRUCTION_CHECK_INTERVAL_SECONDS = 60
@@ -109,6 +110,10 @@ def temperature_tolerance():
         return float(_get_option_with_default('temperature_tolerance_C', DEFAULT_TEMPERATURE_TOLERANCE_C))
     else:
         return float(temperature_tolerance_C_overwrite)
+
+def normal_relay_state():
+    ''' returns the default/normal relay state that is either 'open' or 'closed'. Default value is 'open' '''
+    return _get_option_with_default('normal_relay_state', DEFAULT_NORMAL_RELAY_STATE)    
     
 def set_store_temperature_interval_seconds(seconds):
     """ sets every how many seconds should the temperature readings be stored in the DB """

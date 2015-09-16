@@ -102,7 +102,7 @@ def connect():
     global db
     global cursor    
     if _is_memory_db():
-        db = sqlite3.connect(':memory:', check_same_thread=False)
+        db = sqlite3.connect(':memory:', check_same_thread=False)  # @UndefinedVariable
         print 'Using sqlite3 in-memory database.'        
     else:            
         db = MySQLdb.connect(host=configuration.db_host(), user=configuration.db_user(), passwd=configuration.db_pwd(), db=configuration.db_name())

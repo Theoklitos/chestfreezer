@@ -9,7 +9,7 @@ from util import configuration, misc_utils
 import smtplib
 
 GMAIL_USERNAME = 'chestfriseur@gmail.com'
-GMAIL_PASSWORD = 'h3f3w3iz3n'
+GMAIL_PASSWORD = 'p4p4r0lagn1a'
 
 def _send_email(subject, body, recipients):
     if not configuration.should_send_emails():        
