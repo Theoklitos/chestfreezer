@@ -25,7 +25,7 @@ def output_pin(pin_number, state):
     pin_number_int = int(pin_number)    
     GPIO.setup(pin_number_int, GPIO.OUT)    
     GPIO.output(pin_number_int, state)
-    print 'Setting GPIO.output pin #' + str(pin_number_int) + " with state " + str(state)
+    #print '[Setting GPIO.output pin #' + str(pin_number_int) + " with state: " + str(state) + ']'
     
 def output_pin_for_time(pin_number, state, seconds):
     """ will set the (boolean) state of the given pin_number # in GPIO.BOARD mode. 
