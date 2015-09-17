@@ -409,19 +409,19 @@ def set_device_state(device_name):
         abort(400, 'Either set the "override" value or the "state", but not both.')
     
     if _is_freezer(device_name):
-        if state is None:
-            brew_logic.remove_freezer_override()
+        if state is None:            
             print 'Removing freezer override...'
+            brew_logic.remove_freezer_override()
         else:
-            brew_logic.set_freezer_override(state)
-            print 'Overriding freezer to ' + str(state) + '...'
+            print 'Setting freezer override to ' + str(state) + '...'
+            brew_logic.set_freezer_override(state)            
     elif _is_heater(device_name):
-        if state is None:
-            brew_logic.remove_heater_override()
+        if state is None:            
             print 'Removing heater override...'
-        else:
+            brew_logic.remove_heater_override()
+        else:            
+            print 'Setting heater override to ' + str(state) + '...'
             brew_logic.set_heater_override(state)
-            print 'Overriding heater to ' + str(state) + '...'
     else: 
         abort(400, 'Device "' + device_name + '" is unrecognized. Please use "heater" or "freezer"')
     response.status = 204;
