@@ -63,7 +63,7 @@ __chestfreezer-built.js__ file which is significantly smaller and faster to run.
 
 Configuration
 -------------
-Start the script with bin/chestfreezer.py. A 'configuration' file is included with all the options. Also, there exist 
+Start the script with bin/chestfreezer.py. A sample 'configuration' file is included with all the options. Also, there exist 
 some development-handy CL parameters:
 * 'skip-gpio-test', to skip the relay on/off test
 * 'drop', to drop (and re-create) all the DB tables at startup

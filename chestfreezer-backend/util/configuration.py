@@ -195,6 +195,14 @@ def port():
     """ which port should the web interface run on """
     return int(_get_option_with_default('port', DEFAULT_PORT))
 
+def gmail_username():
+    ''' gmail account that chestfreezer uses to send out emails '''
+    return _get_option_with_default('gmail_username', '')
+    
+def gmail_password():
+    ''' password for chestfreezer's gmail account '''
+    return _get_option_with_default('gmail_password', '')
+
 def emails_to_warn():
     """ who should get warning about errors messages in the chestfreezer? """
     emails_for_escalation = _get_array_option_with_default('emails_to_warn', DEFAULT_EMAILS_TO_WARN)        
@@ -210,8 +218,8 @@ def set_should_send_emails(should):
     _should_send_emails = should
 
 def should_send_emails():
-    """ is the emailer enabled? this can be set only at runtime """
-    return _should_send_emails
+    """ is the emailer enabled? this can be set only at runtime """    
+    return (_should_send_emails) | (not gmail_username()) | (not gmail_username())
 
 def set_is_security_enabled(should):
     """ sets whether the web interface (basic auth) security should be enabled or not """

@@ -1,0 +1,34 @@
+# the raspberry pi output pins that the devices are connected to
+heater_pin = 
+freezer_pin = 
+
+# can either be 'open' or 'closed', depending on your relay type
+normal_relay_state = 
+
+# mysql DB account
+db_user = 
+db_password = 
+db_type = disk
+
+# set to True to enable http basic auth
+security_enabled = 
+
+# define the IPs allowed to access the chestfreezer API
+allowed_ips = 
+
+# data update times 
+instruction_check_interval_time_seconds = 
+temperature_store_interval_time_seconds = 
+monitor_temperature_interval_time_seconds = 
+
+# gmail account credentials, that chestfreezer uses to send out emails
+gmail_username = 
+gmail_password = 
+
+# who should get warnings(errors) and who should get beer update emails
+emails_to_notify = 
+emails_to_warn = 
+
+# port the webserver runs on
+port = 
+

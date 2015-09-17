@@ -8,23 +8,23 @@ sends notifications, escalations etc to a gmail account
 from util import configuration, misc_utils
 import smtplib
 
-GMAIL_USERNAME = 'chestfriseur@gmail.com'
-GMAIL_PASSWORD = 'p4p4r0lagn1a'
-
 def _send_email(subject, body, recipients):
-    if not configuration.should_send_emails():        
+    if not configuration.should_send_emails():      
+        print 'Email sending is disabled, will not send out email "' + subject + '"'  
         return
+    username = configuration.gmail_username()
+    password = configuration.gmail_password()
     """ connects to gmail's smtp server and sends the email """
     server = smtplib.SMTP('smtp.gmail.com:587')
     server.ehlo()
     server.starttls()
-    server.login(GMAIL_USERNAME, GMAIL_PASSWORD)
+    server.login(username, password)
     print 'Send email "' + subject + '" to ' + ','.join(recipients) + '.'
     for to in recipients:        
         message = """\From: %s\nTo: %s\nSubject: %s\n\n%s
-        """ % (GMAIL_USERNAME, ", ".join(recipients), subject, body)    
+        """ % (username, ", ".join(recipients), subject, body)    
         try:
-            server.sendmail(GMAIL_USERNAME, to, 'Content-type: text/html\n' + message)                     
+            server.sendmail(username, to, 'Content-type: text/html\n' + message)                     
         except Exception as e:
             print 'Could not send email: ' + str(e)
     server.quit()
