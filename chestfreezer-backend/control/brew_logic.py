@@ -166,26 +166,32 @@ def store_instruction_for_unique_time(instruction):
     else: database.db_adapter._store_instruction(instruction)    
     
 def _set_heater(should_activate):
-    """ sets the heater state to on/off directly """            
+    """ sets the heater state to on/off directly """
     global heater_state
-    if should_activate is not heater_state:
-        print 'Received command to set heater to ' + str(should_activate)
-        heater_state = should_activate
-        if _should_reverse_device_state():             
-            should_activate = not should_activate
-            print 'Relay normal state is OPEN, therefore activation command flipped to ' + str(should_activate)
-        chestfreezer_gpio.output_pin(configuration.heater_pin(), not should_activate) 
+    new_state = _set_device_internal('heater', should_activate, heater_state, configuration.heater_pin())
+    heater_state = new_state                
+    #global heater_state
+    #if should_activate is not heater_state:
+    #    print 'Received command to set heater to ' + str(should_activate)
+    #    heater_state = should_activate
+    #    if _should_reverse_device_state():             
+    #        should_activate = not should_activate
+    #        print 'Relay normal state is OPEN, therefore activation command flipped to ' + str(should_activate)
+    #    chestfreezer_gpio.output_pin(configuration.heater_pin(), not should_activate) 
 
 def _set_freezer(should_activate):
     """ sets the freezer state to on/off directly """    
     global freezer_state
-    if should_activate is not freezer_state:        
-        print 'Received command to set freezer to ' + str(should_activate)
-        freezer_state = should_activate
-        if _should_reverse_device_state():             
-            should_activate = not should_activate
-            print 'Relay normal state is OPEN, therefore activation command flipped to ' + str(should_activate) 
-        chestfreezer_gpio.output_pin(configuration.freezer_pin(), not should_activate) 
+    new_state = _set_device_internal('freezer', should_activate, freezer_state, configuration.heater_pin())
+    freezer_state = new_state    
+    #global freezer_state
+    #if should_activate is not freezer_state:        
+    #    print 'Received command to set freezer to ' + str(should_activate)
+    #    freezer_state = should_activate
+    #    if _should_reverse_device_state():             
+    #        should_activate = not should_activate
+    #        print 'Relay normal state is OPEN, therefore activation command flipped to ' + str(should_activate) 
+    #    chestfreezer_gpio.output_pin(configuration.freezer_pin(), not should_activate) 
 
 def _set_device_internal(device_descriptive_string, should_activate, global_state_variable, pin_number):    
     if should_activate is not global_state_variable:
