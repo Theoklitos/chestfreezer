@@ -193,17 +193,16 @@ def _set_freezer(should_activate):
     #        print 'Relay normal state is OPEN, therefore activation command flipped to ' + str(should_activate) 
     #    chestfreezer_gpio.output_pin(configuration.freezer_pin(), not should_activate) 
 
-def _set_device_internal(device_descriptive_string, should_activate, global_state_variable, pin_number):    
+def _set_device_internal(device_descriptive_string, should_activate, global_state_variable, pin_number):        
     if should_activate is not global_state_variable:
-        print 'Received command to set ' + device_descriptive_string + ' to ' + str(should_activate)
-        new_global_state = should_activate
+        print 'Received command to set ' + device_descriptive_string + ' to ' + str(should_activate)        
         if _should_reverse_device_state():             
             should_activate = not should_activate
             print 'Relay normal state is OPEN, therefore activation command flipped to ' + str(should_activate)
         else: print 'Relay normal state is CLOSED, therefore activation command remains ' + str(should_activate)
         # the pins need the opposite value to be triggered 
         chestfreezer_gpio.output_pin(pin_number, not should_activate)
-    return new_global_state
+    return should_activate
 
 def _is_device_overriden():
     """ returns true if there a heater or a freezer override """
